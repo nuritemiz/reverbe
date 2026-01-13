@@ -280,7 +280,7 @@ export default function Checkout() {
                 <View className="h-40" />
             </ScrollView>
 
-            <View className="bg-primary-color px-4 pb-16 pt-4 absolute bottom-0 left-0 right-0">
+            <View className="bg-primary-color px-4 pb-8 pt-4 absolute bottom-0 left-0 right-0">
                 <TouchableOpacity
                     onPress={handlePayment}
                     className="bg-secondary-color h-[48] rounded-lg justify-center items-center"

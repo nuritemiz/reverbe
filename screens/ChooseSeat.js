@@ -70,7 +70,7 @@ export default function ChooseSeat() {
 
     const handleSeatPress = (row, seatNum) => {
         const seat = seats.find(s => s.row_letter === row && s.seat_number === seatNum)
-        if (!seat || seat.status === 'sold') return
+        if (!seat || seat.status === 'sold' || seat.status === 'reserved') return
 
         const isAlreadySelected = selectedSeats.some(
             s => s.row_letter === row && s.seat_number === seatNum
@@ -205,7 +205,7 @@ export default function ChooseSeat() {
                                                 <TouchableOpacity
                                                     key={`${row}${seatNum}`}
                                                     onPress={() => handleSeatPress(row, seatNum)}
-                                                    disabled={status === 'sold'}
+                                                    disabled={status === 'sold' || status === 'reserved'}
                                                 >
                                                     <View
                                                         style={{
@@ -277,7 +277,7 @@ export default function ChooseSeat() {
 
             {!showMap && (
                 <TouchableOpacity
-                    className="absolute bottom-10 left-3 right-3"
+                    className="absolute bottom-20 left-3 right-3"
                     onPress={buyTickets}
                     disabled={selectedSeats.length === 0}
                 >
