@@ -1,0 +1,40 @@
+[
+    {
+        "id": 1,
+        "title": "Coachella 2026: Weekend 1",
+        "location": "Indio",
+        "city": "California",
+        "date": "APR 10-12, 2026",
+        "category": "Festival",
+        "image": "coachella"
+    },
+    {
+        "id": 2,
+        "title": "A Night of Jazz: Gregory Porter",
+        "location": "Blue Note Jazz Club",
+        "city": "NY",
+        "date": "FEB 14, 2026",
+        "category": "Jazz",
+        "image": "jazz"
+    },
+    {
+        "id": 3,
+        "title": "Wicked: The Musical",
+        "location": "Gershwin Theatre",
+        "city": "California",
+        "date": "MAR 20-25, 2026",
+        "category": "Theater",
+        "image": "theater"
+        
+    },
+
+    {
+        "id": 4,
+        "title": "Milano Cortina 2026 (Winter Olympic Games)",
+        "location": "Milan and Cortina d'Ampezzo",
+        "city": "Italy",
+        "date": "February 6–22, 2026",
+        "category": "Sports",
+        "image": "sports"
+    }
+]
