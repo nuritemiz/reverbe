@@ -270,14 +270,14 @@ export default function ChooseSeat() {
                             </View>
                         )}
 
-                        <View className="pb-20" />
+                        <View className="pb-48" />
                     </>
                 )}
             </ScrollView>
 
             {!showMap && (
                 <TouchableOpacity
-                    className="absolute bottom-20 left-3 right-3"
+                    className="absolute bottom-10 left-3 right-3"
                     onPress={buyTickets}
                     disabled={selectedSeats.length === 0}
                 >

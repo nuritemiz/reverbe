@@ -2,7 +2,7 @@ import { View, Text, Image, ScrollView, TouchableOpacity, TextInput } from 'reac
 import React, { useState, useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons'
-import { useNavigation, useRoute } from '@react-navigation/native'
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 
 
@@ -70,11 +70,22 @@ export default function Checkout() {
                 if (seatError) throw seatError
             }
 
-            navigation.navigate('PayoutSuccess', {
-                cartSeats,
-                event,
-                orderNumber
-            })
+            navigation.dispatch(
+                CommonActions.reset({
+                    index: 0,
+                    routes: [
+                        { name: 'Main' },
+                        {
+                            name: 'PayoutSuccess',
+                            params: {
+                                cartSeats,
+                                event,
+                                orderNumber
+                            }
+                        }
+                    ],
+                })
+            )
         } catch (error) {
             console.error('Payment error:', error)
             alert('Payment failed. Please try again.')

@@ -1,8 +1,8 @@
-import { View, Text, TouchableOpacity, Animated } from 'react-native'
+import { View, Text, TouchableOpacity, Animated, BackHandler } from 'react-native'
 import React, { useState, useEffect, useRef } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { useNavigation, useRoute } from '@react-navigation/native'
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native'
 
 export default function PayoutSuccess() {
     const navigation = useNavigation()
@@ -31,6 +31,15 @@ export default function PayoutSuccess() {
         }, 1000)
 
         return () => clearTimeout(timer)
+    }, [])
+
+    // Disable hardware back button on this screen
+    useEffect(() => {
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+            return true // Prevent back action
+        })
+
+        return () => backHandler.remove()
     }, [])
 
     const displayOrderNumber = orderNumber || `${Math.floor(10000 + Math.random() * 90000)}-${Math.floor(10000 + Math.random() * 90000)}`
@@ -66,14 +75,34 @@ export default function PayoutSuccess() {
 
             <View className="absolute bottom-20 w-full px-6">
                 <TouchableOpacity
-                    onPress={() => navigation.navigate('MyTickets')}
+                    onPress={() => navigation.dispatch(
+                        CommonActions.reset({
+                            index: 0,
+                            routes: [
+                                {
+                                    name: 'Main',
+                                    params: { screen: 'TicketsTab' }
+                                }
+                            ],
+                        })
+                    )}
                     className="bg-secondary-color h-[48] rounded-md justify-center items-center"
                 >
                     <Text className="text-text-primary-color font-medium text-[16px]">View My Tickets</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={() => navigation.navigate('Home')}
+                    onPress={() => navigation.dispatch(
+                        CommonActions.reset({
+                            index: 0,
+                            routes: [
+                                {
+                                    name: 'Main',
+                                    params: { screen: 'HomeTab' }
+                                }
+                            ],
+                        })
+                    )}
                     className="border-2 border-secondary-color h-[48] rounded-md justify-center items-center mt-4"
                 >
                     <Text className="text-text-primary-color font-medium text-[16px]">Return to Home Page</Text>
