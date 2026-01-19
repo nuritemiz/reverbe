@@ -97,7 +97,10 @@ export default function SignIn({ navigation }) {
                                     </TouchableOpacity>
                                 </View>
 
-                                <TouchableOpacity className="self-end mt-3">
+                                <TouchableOpacity
+                                    className="self-end mt-3"
+                                    onPress={() => navigation.navigate('ForgotPassword')}
+                                >
                                     <Text className="text-secondary-color text-[12px]">Forgot Password?</Text>
                                 </TouchableOpacity>
                             </View>
