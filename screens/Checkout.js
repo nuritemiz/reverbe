@@ -43,22 +43,43 @@ export default function Checkout() {
 
     const handlePayment = async () => {
         try {
+
+            const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+            console.log('User data:', user)
+            console.log('User ID:', user?.id)
+            console.log('User error:', userError)
+
+            if (userError || !user) {
+                alert('Please sign in to complete your purchase')
+                return
+            }
+
             const orderNumber = `${Math.floor(10000 + Math.random() * 90000)}-${Math.floor(10000 + Math.random() * 90000)}`
 
             for (const seat of cartSeats) {
+                const ticketData = {
+                    user_id: user.id,
+                    event_id: event.id,
+                    seat_number: seat.seat_number,
+                    row_letter: seat.row_letter,
+                    section: seat.section,
+                    price: ticketPrice,
+                    order_number: orderNumber,
+                }
+
+                console.log('Inserting ticket:', ticketData)
+
                 const { error: purchaseError } = await supabase
                     .from('purchased_tickets')
-                    .insert({
-                        user_id: 'user-1',
-                        event_id: event.id,
-                        seat_number: seat.seat_number,
-                        row_letter: seat.row_letter,
-                        section: seat.section,
-                        price: ticketPrice,
-                        order_number: orderNumber,
-                    })
+                    .insert(ticketData)
 
-                if (purchaseError) throw purchaseError
+                if (purchaseError) {
+                    console.error('Purchase error:', purchaseError)
+                    throw purchaseError
+                }
+
+                console.log('Ticket inserted successfully')
 
                 const { error: seatError } = await supabase
                     .from('seats')

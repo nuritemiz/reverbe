@@ -1,11 +1,25 @@
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
+import { supabase } from '../lib/supabase'
 
 export default function Profile() {
     const navigation = useNavigation()
+
+    const [user, setUser] = useState(null);
+
+    const fetchUser = async () => {
+        const { data, error } = await supabase.auth.getUser();
+        if (data?.user) {
+            setUser(data.user);
+        }
+    };
+
+    useEffect(() => {
+        fetchUser();
+    }, []);
 
     const menuItems = [
         { id: 1, title: 'My tickets', icon: 'chevron-right', screen: 'MyTickets' },
@@ -49,8 +63,12 @@ export default function Profile() {
                             <MaterialCommunityIcons name="account" size={24} color="#0E0E0E" />
                         </View>
                         <View className="ml-3 flex-1">
-                            <Text className="text-text-primary-color font-semibold text-[18px]">Martin Decks</Text>
-                            <Text className="text-text-secondary-color text-[13px] ">martindecks@icloud.com</Text>
+                            <Text className="text-text-primary-color font-semibold text-[18px]">
+                                {user?.user_metadata?.full_name || user?.email || 'Kullanıcı adı'}
+                            </Text>
+                            <Text className="text-text-secondary-color text-[13px] ">
+                                {user?.email || 'E-posta'}
+                            </Text>
                         </View>
                     </View>
                     <TouchableOpacity>

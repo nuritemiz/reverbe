@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
@@ -11,6 +11,7 @@ export default function MyTickets() {
     const [upcomingTickets, setUpcomingTickets] = useState([])
     const [historyTickets, setHistoryTickets] = useState([])
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
 
     useEffect(() => {
         fetchTickets()
@@ -18,6 +19,19 @@ export default function MyTickets() {
 
     const fetchTickets = async () => {
         try {
+            // Get the current authenticated user
+            const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+            console.log('[MyTickets] User:', user?.id)
+
+            if (userError || !user) {
+                console.log('[MyTickets] No authenticated user found')
+                setUpcomingTickets([])
+                setHistoryTickets([])
+                setLoading(false)
+                return
+            }
+
             const { data: ticketsData, error: ticketsError } = await supabase
                 .from('purchased_tickets')
                 .select(`
@@ -30,8 +44,11 @@ export default function MyTickets() {
                         image_url
                     )
                 `)
-                .eq('user_id', 'user-1')
+                .eq('user_id', user.id)
                 .order('purchase_date', { ascending: false })
+
+            console.log('[MyTickets] Tickets data:', ticketsData)
+            console.log('[MyTickets] Tickets error:', ticketsError)
 
             if (ticketsError) {
                 console.error('Tickets fetch error:', ticketsError)
@@ -39,6 +56,7 @@ export default function MyTickets() {
             }
 
             if (!ticketsData || ticketsData.length === 0) {
+                console.log('[MyTickets] No tickets found')
                 setUpcomingTickets([])
                 setHistoryTickets([])
                 return
@@ -63,13 +81,20 @@ export default function MyTickets() {
             })
 
             const ticketsList = Object.values(groupedTickets)
+            console.log('[MyTickets] Grouped tickets:', ticketsList)
             setUpcomingTickets(ticketsList)
             setHistoryTickets([])
         } catch (error) {
             console.error('Error fetching tickets:', error)
         } finally {
             setLoading(false)
+            setRefreshing(false)
         }
+    }
+
+    const onRefresh = async () => {
+        setRefreshing(true)
+        await fetchTickets()
     }
 
     return (
@@ -110,7 +135,17 @@ export default function MyTickets() {
                     <Text className="text-text-secondary-color text-[14px] mt-4">Loading tickets...</Text>
                 </View>
             ) : (
-                <ScrollView className="mt-6">
+                <ScrollView
+                    className="mt-6"
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            tintColor="#1DB954"
+                            colors={['#1DB954']}
+                        />
+                    }
+                >
                     {activeTab === 'upcoming' ? (
                         upcomingTickets.length > 0 ? (
                             upcomingTickets.map((ticket) => (
