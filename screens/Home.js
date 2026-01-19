@@ -11,10 +11,49 @@ export default function Home() {
   const [activeIndex, setActiveIndex] = useState(0)
   const scrollViewRef = useRef(null)
   const [knicksEvent, setKnicksEvent] = useState(null)
+  const [hamiltonEvent, setHamiltonEvent] = useState(null)
+  const [coldplayEvent, setColdplayEvent] = useState(null)
+  const [weekndEvent, setWeekndEvent] = useState(null)
+  const [ufcEvent, setUfcEvent] = useState(null)
+  const [userName, setUserName] = useState('')
 
   useEffect(() => {
     fetchKnicksEvent()
+    fetchHamiltonEvent()
+    fetchFeaturedEvents()
   }, [])
+
+  // Auth state değişikliklerini dinle
+  useEffect(() => {
+    // İlk yüklemede mevcut session'ı kontrol et
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUserProfile(session.user.id)
+      }
+    })
+
+    // Auth state değişikliklerini dinle
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        fetchUserProfile(session.user.id)
+      } else {
+        setUserName('')
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const fetchUserProfile = async (userId) => {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', userId)
+      .single()
+    if (profile && profile.full_name) {
+      setUserName(profile.full_name.split(' ')[0])
+    }
+  }
 
   const fetchKnicksEvent = async () => {
     const { data, error } = await supabase
@@ -28,6 +67,43 @@ export default function Home() {
     } else {
       setKnicksEvent(data)
     }
+  }
+
+  const fetchHamiltonEvent = async () => {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('title', 'Hamilton: An American Musical')
+      .single()
+
+    if (error) {
+      console.error('Hamilton Hata:', error.message)
+    } else {
+      setHamiltonEvent(data)
+    }
+  }
+
+  const fetchFeaturedEvents = async () => {
+    const { data: coldplay } = await supabase
+      .from('events')
+      .select('*')
+      .eq('title', 'Coldplay: Music of The Spheres Tour')
+      .single()
+    if (coldplay) setColdplayEvent(coldplay)
+
+    const { data: weeknd } = await supabase
+      .from('events')
+      .select('*')
+      .eq('title', 'The Weeknd: After Hours til Dawn Tour')
+      .single()
+    if (weeknd) setWeekndEvent(weeknd)
+
+    const { data: ufc } = await supabase
+      .from('events')
+      .select('*')
+      .eq('title', 'Jones vs. Miocic')
+      .single()
+    if (ufc) setUfcEvent(ufc)
   }
 
   useEffect(() => {
@@ -53,9 +129,9 @@ export default function Home() {
 
   return (
     <SafeAreaView className="flex-1 bg-primary-color">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 12 }}>
         <TouchableOpacity onPress={() => navigation.navigate('Profile')} className="mt-10 ml-3 flex-row items-center">
-          <Text className="text-text-primary-color font-semibold text-[20px]">Hello, Martin</Text>
+          <Text className="text-text-primary-color font-semibold text-[20px]">Hello, {userName || 'Guest'}</Text>
           <MaterialCommunityIcons name="hand-wave" size={24} color="#1DB954" className="ml-2" />
         </TouchableOpacity>
 
@@ -86,7 +162,7 @@ export default function Home() {
           >
 
 
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => coldplayEvent && navigation.navigate('Details', { event: coldplayEvent })}>
               <View className="w-[340] h-[120] rounded-xl overflow-hidden">
                 <Image
                   source={require('../assets/slider-1.png')}
@@ -112,7 +188,7 @@ export default function Home() {
             </TouchableOpacity>
 
 
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => weekndEvent && navigation.navigate('Details', { event: weekndEvent })}>
               <View className="w-[340] h-[120] rounded-xl overflow-hidden">
                 <Image
                   source={require('../assets/slider-2.png')}
@@ -137,7 +213,7 @@ export default function Home() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => ufcEvent && navigation.navigate('Details', { event: ufcEvent })}>
               <View className="w-[340] h-[120] rounded-xl overflow-hidden">
                 <Image
                   source={require('../assets/slider-3.png')}
@@ -203,11 +279,11 @@ export default function Home() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => hamiltonEvent && navigation.navigate('Details', { event: hamiltonEvent })}>
               <View className="w-[189] ml-3 mt-4">
                 <View className="w-full h-[100] rounded-xl overflow-hidden">
                   <Image
-                    source={require('../assets/events-image-2.png')}
+                    source={hamiltonEvent?.image_url ? { uri: hamiltonEvent.image_url } : require('../assets/hamilton.png')}
                     className="w-full h-full"
                     resizeMode='cover'
                   />

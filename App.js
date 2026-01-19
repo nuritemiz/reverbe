@@ -17,11 +17,12 @@ import PayoutSuccess from './screens/PayoutSuccess';
 import Tickets from './screens/Tickets';
 import MyTickets from './screens/MyTickets';
 import Profile from './screens/Profile';
+import Register from './screens/Register';
+import SignIn from './screens/SignIn';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Bottom Tab Navigator for main screens
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -99,6 +100,8 @@ export default function App() {
       <StatusBar style="auto" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Register" component={Register} />
+        <Stack.Screen name="SignIn" component={SignIn} />
         <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Search" component={Search} />

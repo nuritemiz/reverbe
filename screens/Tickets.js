@@ -9,10 +9,6 @@ export default function Tickets() {
     const route = useRoute()
     const { cartSeats = [], event = null } = route.params || {}
 
-    console.log('Tickets Screen Data:')
-    console.log('cartSeats:', cartSeats)
-    console.log('event:', event)
-    console.log('cartSeats.length:', cartSeats.length)
 
     return (
         <SafeAreaView className="bg-primary-color flex-1">

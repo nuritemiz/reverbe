@@ -33,7 +33,6 @@ export default function ChooseSeat() {
             if (error) throw error
             setSeats(data || [])
         } catch (error) {
-            console.log('Error fetching seats:', error)
 
             generateLocalSeats()
         } finally {
@@ -92,7 +91,6 @@ export default function ChooseSeat() {
 
     const buyTickets = async () => {
         try {
-            // Reserve selected seats in Supabase
             for (const seat of selectedSeats) {
                 const { error } = await supabase
                     .from('seats')
@@ -104,7 +102,6 @@ export default function ChooseSeat() {
                 if (error) throw error
             }
 
-            // Update local state to reflect reserved seats
             setSeats(prev => prev.map(s => {
                 const isReserved = selectedSeats.some(
                     sel => sel.row_letter === s.row_letter && sel.seat_number === s.seat_number
@@ -112,14 +109,12 @@ export default function ChooseSeat() {
                 return isReserved ? { ...s, status: 'reserved' } : s
             }))
 
-            // Navigate to Cart with selected seats and event data
             navigation.navigate('Cart', {
                 selectedSeats,
                 event,
                 totalPrice
             })
         } catch (error) {
-            console.log('Error reserving seats:', error)
             alert('Error reserving seats. Please try again.')
         }
     }

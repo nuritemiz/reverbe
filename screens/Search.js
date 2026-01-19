@@ -3,16 +3,16 @@ import React, { useRef, useState, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { supabase } from '../lib/supabase'; 
+import { supabase } from '../lib/supabase';
 
 export default function Search() {
   const navigation = useNavigation()
   const inputRef = useRef(null)
-  
+
 
   const [searchText, setSearchText] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
-  const [allEvents, setAllEvents] = useState([]) 
+  const [allEvents, setAllEvents] = useState([])
   const [filteredEvents, setFilteredEvents] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -34,7 +34,7 @@ export default function Search() {
     const { data, error } = await supabase
       .from('events')
       .select('*')
-    
+
     if (error) {
       console.error('Supabase Hatası:', error.message)
     } else {
@@ -49,7 +49,7 @@ export default function Search() {
     const filtered = allEvents.filter(event => {
       const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory
       const matchesSearch = event.title.toLowerCase().includes(searchText.toLowerCase()) ||
-                            event.category.toLowerCase().includes(searchText.toLowerCase())
+        event.category.toLowerCase().includes(searchText.toLowerCase())
       return matchesCategory && matchesSearch
     })
     setFilteredEvents(filtered)
@@ -89,7 +89,7 @@ export default function Search() {
           <TouchableOpacity key={cat} onPress={() => setSelectedCategory(cat)}>
             <View className={`h-[40] px-4 rounded-md items-center justify-center flex-row gap-2 ${selectedCategory === cat ? 'bg-secondary-color' : 'bg-tertiary-color'}`}>
               <MaterialCommunityIcons
-                name={cat === 'All' ? 'view-grid' : cat === 'Trends' ? 'trending-up' : cat === 'Sports' ? 'basketball' : cat === 'Theater' ? 'drama-masks' : 'tent'}
+                name={cat === 'All' ? 'view-grid' : cat === 'Trends' ? 'trending-up' : cat === 'Sports' ? 'trophy' : cat === 'Theater' ? 'drama-masks' : 'tent'}
                 size={20}
                 color={selectedCategory === cat ? '#000' : '#1DB954'}
               />
@@ -110,14 +110,14 @@ export default function Search() {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, gap: 10 }}>
           {filteredEvents.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              onPress={() => navigation.navigate('Details', { event: item })} 
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => navigation.navigate('Details', { event: item })}
             >
               <View className="w-[340] ml-3 mt-4">
                 <View className="w-full h-[110] rounded-xl overflow-hidden">
                   <Image
-                    source={{ uri: item.image_url }} 
+                    source={{ uri: item.image_url }}
                     className="w-full h-full"
                     resizeMode='cover'
                   />

@@ -1,9 +1,10 @@
 import { View, Text, ScrollView, Image, TouchableOpacity, Modal } from 'react-native'
 import MapView, { Marker } from 'react-native-maps'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { supabase } from '../lib/supabase'
 
 export default function Details() {
     const navigation = useNavigation()
@@ -14,6 +15,43 @@ export default function Details() {
     const [rulesExpanded, setRulesExpanded] = useState(false)
     const [selectedTicket, setSelectedTicket] = useState(null)
     const [seatingModalVisible, setSeatingModalVisible] = useState(false)
+    const [standardPrice, setStandardPrice] = useState(null)
+    const [premiumPrice, setPremiumPrice] = useState(null)
+
+    useEffect(() => {
+        fetchEventPrices()
+    }, [])
+
+    const fetchEventPrices = async () => {
+        const { data, error } = await supabase
+            .from('events')
+            .select('standard_price, premium_price')
+            .eq('id', event.id)
+            .single()
+
+        if (!error && data) {
+            setStandardPrice(data.standard_price)
+            setPremiumPrice(data.premium_price)
+        }
+    }
+
+    const getEventIcon = (category) => {
+        switch (category) {
+            case 'Trends':
+            case 'Music':
+            case 'Concert':
+                return 'music-note'
+            case 'Sports':
+            case 'Basketball':
+            case 'Football':
+                return 'trophy'
+            case 'Theater':
+            case 'Comedy':
+                return 'drama-masks'
+            default:
+                return 'ticket'
+        }
+    }
 
     return (
         <SafeAreaView className="bg-primary-color flex-1">
@@ -31,7 +69,7 @@ export default function Details() {
                 />
 
                 <View className="mt-4 px-3 flex-row gap-3">
-                    <MaterialCommunityIcons className="self-center" name="basketball" size={20} color="#1DB954" />
+                    <MaterialCommunityIcons className="self-center" name={getEventIcon(event.category)} size={20} color="#1DB954" />
                     <Text className="font-semibold text-[20px] color-text-primary-color">
                         {event.title}
                     </Text>
@@ -89,7 +127,7 @@ export default function Details() {
                     className={`w-[340] h-[40] self-center mt-6 justify-between flex-row items-center px-3 rounded-md ${selectedTicket === 'standard' ? 'bg-[#1DB954]' : 'bg-tertiary-color'}`}
                 >
                     <Text className={`font-medium text-[12px] ${selectedTicket === 'standard' ? 'text-text-primary-color' : 'text-text-primary-color'}`}>Standard Ticket</Text>
-                    <Text className={`font-medium text-[12px] ${selectedTicket === 'standard' ? 'text-text-primary-color' : 'text-secondary-color'}`}>$120.00</Text>
+                    <Text className={`font-medium text-[12px] ${selectedTicket === 'standard' ? 'text-text-primary-color' : 'text-secondary-color'}`}>${standardPrice ? standardPrice.toFixed(2) : '---'}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -97,7 +135,7 @@ export default function Details() {
                     className={`w-[340] h-[40] self-center mt-6 justify-between flex-row items-center px-3 rounded-md ${selectedTicket === 'premium' ? 'bg-[#1DB954]' : 'bg-tertiary-color'}`}
                 >
                     <Text className={`font-medium text-[12px] ${selectedTicket === 'premium' ? 'text-text-primary-color' : 'text-text-primary-color'}`}>Premium Package</Text>
-                    <Text className={`font-medium text-[12px] ${selectedTicket === 'premium' ? 'text-text-primary-color' : 'text-secondary-color'}`}>$160.00</Text>
+                    <Text className={`font-medium text-[12px] ${selectedTicket === 'premium' ? 'text-text-primary-color' : 'text-secondary-color'}`}>${premiumPrice ? premiumPrice.toFixed(2) : '---'}</Text>
                 </TouchableOpacity>
 
                 <View className="flex-row justify-between">
@@ -144,11 +182,17 @@ export default function Details() {
 
             </ScrollView>
 
-            <TouchableOpacity onPress={() => navigation.navigate('ChooseTier', { event })}>
-                <View className="w-[340px] h-[44px] bg-secondary-color justify-center self-center items-center rounded-md mb-4">
-                    <Text className="font-medium text-text-primary-color">Buy Tickets</Text>
+            {event.title === 'NY Knicks vs. LA Lakers' ? (
+                <TouchableOpacity onPress={() => navigation.navigate('ChooseTier', { event })}>
+                    <View className="w-[340px] h-[44px] bg-secondary-color justify-center self-center items-center rounded-md mb-4">
+                        <Text className="font-medium text-text-primary-color">Buy Tickets</Text>
+                    </View>
+                </TouchableOpacity>
+            ) : (
+                <View className="w-[340px] h-[44px] bg-tertiary-color justify-center self-center items-center rounded-md mb-4">
+                    <Text className="font-medium text-text-tertiary-color">Coming Soon</Text>
                 </View>
-            </TouchableOpacity>
+            )}
 
             <Modal
                 visible={seatingModalVisible}

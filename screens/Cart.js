@@ -32,7 +32,6 @@ export default function Cart() {
             }
             setCartSeats([])
         } catch (error) {
-            console.log('Error clearing cart:', error)
         }
     }
 
@@ -66,7 +65,7 @@ export default function Cart() {
             alert('Reservation expired. Seats have been released.')
             navigation.navigate('ChooseSeat', { event })
         } catch (error) {
-            console.log('Error releasing seats:', error)
+            // ...existing code...
         }
     }
 
@@ -83,7 +82,7 @@ export default function Cart() {
             alert('Purchase successful!')
             navigation.navigate('Home')
         } catch (error) {
-            console.log('Error purchasing:', error)
+            // ...existing code...
             alert('Error completing purchase. Please try again.')
         }
     }

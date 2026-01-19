@@ -33,10 +33,9 @@ export default function PayoutSuccess() {
         return () => clearTimeout(timer)
     }, [])
 
-    // Disable hardware back button on this screen
     useEffect(() => {
         const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-            return true // Prevent back action
+            return true
         })
 
         return () => backHandler.remove()
