@@ -39,6 +39,17 @@ export default function Profile() {
         }
     }
 
+    const handleLogout = async () => {
+        try {
+            await supabase.auth.signOut();
+            navigation.navigate('Login');
+        } catch (error) {
+            console.error('Error signing out:', error);
+            // Navigate anyway even if sign out fails
+            navigation.navigate('Login');
+        }
+    }
+
     return (
         <SafeAreaView className="bg-primary-color flex-1">
             <ScrollView>
@@ -103,7 +114,7 @@ export default function Profile() {
                     ))}
                 </View>
 
-                <TouchableOpacity onPress={() => navigation.navigate('Login')} className="mx-3 mt-8 mb-6">
+                <TouchableOpacity onPress={handleLogout} className="mx-3 mt-8 mb-6">
                     <View className="bg-secondary-color h-[48] w-[120] self-center rounded-md justify-center items-center">
                         <Text className="text-white font-semibold text-[16px]">Log out</Text>
                     </View>

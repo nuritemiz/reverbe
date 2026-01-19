@@ -91,6 +91,16 @@ export default function Checkout() {
                 if (seatError) throw seatError
             }
 
+            // Delete cart reservations after successful purchase
+            const { error: deleteError } = await supabase
+                .from('cart_reservations')
+                .delete()
+                .eq('user_id', user.id)
+
+            if (deleteError) {
+                console.error('Error deleting cart reservations:', deleteError)
+            }
+
             navigation.dispatch(
                 CommonActions.reset({
                     index: 0,
@@ -109,7 +119,24 @@ export default function Checkout() {
             )
         } catch (error) {
             console.error('Payment error:', error)
-            alert('Payment failed. Please try again.')
+
+            // Network error
+            if (error.message === 'Failed to fetch' || error.message?.includes('network')) {
+                alert('Network error during payment. Please check your connection and try again. Your seats are still reserved.')
+            }
+            // Authentication error
+            else if (error.code === 'PGRST301' || error.message?.includes('JWT')) {
+                alert('Session expired. Please log in again.')
+                navigation.navigate('Login')
+            }
+            // Database error
+            else if (error.code?.startsWith('23') || error.code?.startsWith('42')) {
+                alert('Database error. Please contact support if this persists.')
+            }
+            // Generic error
+            else {
+                alert('Payment failed. Please try again. Your seats are still reserved.')
+            }
         }
     }
 

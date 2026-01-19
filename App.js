@@ -4,6 +4,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { supabase } from './lib/supabase';
 import "./global.css"
 import Login from './screens/Login'
 import Home from './screens/Home'
@@ -23,7 +27,47 @@ import SignIn from './screens/SignIn';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function MainTabs() {
+function MainTabs({ navigation }) {
+  const [hasCartItems, setHasCartItems] = useState(false);
+
+  // Check cart status when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      checkCartStatus();
+    }, [])
+  );
+
+  // Listen to navigation changes to update badge in real-time
+  React.useEffect(() => {
+    const unsubscribe = navigation.addListener('state', () => {
+      checkCartStatus();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const checkCartStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setHasCartItems(false);
+        return;
+      }
+
+      const { data: reservations, error } = await supabase
+        .from('cart_reservations')
+        .select('id')
+        .eq('user_id', user.id)
+        .gt('expires_at', new Date().toISOString())
+        .limit(1);
+
+      if (error) throw error;
+      setHasCartItems(reservations && reservations.length > 0);
+    } catch (error) {
+      console.error('Error checking cart status:', error);
+    }
+  };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -39,6 +83,28 @@ function MainTabs() {
             iconName = 'basket';
           } else if (route.name === 'ProfileTab') {
             iconName = 'account';
+          }
+
+          // Cart icon with badge
+          if (route.name === 'CartTab') {
+            return (
+              <View style={{ position: 'relative' }}>
+                <MaterialCommunityIcons name={iconName} size={28} color={color} />
+                {hasCartItems && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: -2,
+                      width: 10,
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor: '#1DB954',
+                    }}
+                  />
+                )}
+              </View>
+            );
           }
 
           return <MaterialCommunityIcons name={iconName} size={28} color={color} />;
@@ -78,7 +144,7 @@ function MainTabs() {
         component={Profile}
         options={{ tabBarLabel: 'Profile' }}
       />
-    </Tab.Navigator>
+    </Tab.Navigator >
   );
 }
 

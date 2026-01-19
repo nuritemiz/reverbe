@@ -21,7 +21,33 @@ export default function ChooseSeat() {
 
     useEffect(() => {
         fetchSeats()
+        checkActiveReservations()
     }, [])
+
+    const checkActiveReservations = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+
+            const { data: reservations, error } = await supabase
+                .from('cart_reservations')
+                .select('*')
+                .eq('user_id', user.id)
+                .gt('expires_at', new Date().toISOString())
+
+            if (error) throw error
+
+            if (reservations && reservations.length > 0) {
+                // User has active reservations, navigate to Cart
+                navigation.navigate('Cart', {
+                    fromReservationCheck: true,
+                    event
+                })
+            }
+        } catch (error) {
+            console.error('Error checking reservations:', error)
+        }
+    }
 
     const fetchSeats = async () => {
         try {
@@ -90,8 +116,49 @@ export default function ChooseSeat() {
     }
 
     const buyTickets = async () => {
+        if (selectedSeats.length === 0) {
+            alert('Please select at least one seat')
+            return
+        }
+
         try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                alert('Please login to reserve seats')
+                return
+            }
+
+            // Calculate expiration time (5 minutes from now)
+            const expiresAt = new Date()
+            expiresAt.setMinutes(expiresAt.getMinutes() + 5)
+
+            // Reserve seats in database
             for (const seat of selectedSeats) {
+                // First check if seat is still available (concurrent selection check)
+                const { data: seatCheck, error: checkError } = await supabase
+                    .from('seats')
+                    .select('status')
+                    .eq('event_id', 'event-1')
+                    .eq('row_letter', seat.row_letter)
+                    .eq('seat_number', seat.seat_number)
+                    .single()
+
+                if (checkError) {
+                    if (checkError.code === 'PGRST116') {
+                        throw new Error(`Seat ${seat.row_letter}${seat.seat_number} not found`)
+                    }
+                    throw checkError
+                }
+
+                if (seatCheck.status !== 'available') {
+                    alert(`Sorry! Seat ${seat.row_letter}${seat.seat_number} is no longer available. Someone else may have reserved it.`)
+                    // Refresh seats to show current status
+                    await fetchSeats()
+                    setSelectedSeats([])
+                    return
+                }
+
+                // Update seat status
                 const { error } = await supabase
                     .from('seats')
                     .update({ status: 'reserved' })
@@ -100,6 +167,22 @@ export default function ChooseSeat() {
                     .eq('seat_number', seat.seat_number)
 
                 if (error) throw error
+
+                // Add to cart_reservations table (upsert to handle duplicates)
+                const { error: reservationError } = await supabase
+                    .from('cart_reservations')
+                    .upsert({
+                        user_id: user.id,
+                        seat_id: `${seat.row_letter}${seat.seat_number}`,
+                        event_id: 'event-1',
+                        row_letter: seat.row_letter,
+                        seat_number: seat.seat_number,
+                        expires_at: expiresAt.toISOString()
+                    }, {
+                        onConflict: 'user_id,seat_id,event_id'
+                    })
+
+                if (reservationError) throw reservationError
             }
 
             setSeats(prev => prev.map(s => {
@@ -112,10 +195,27 @@ export default function ChooseSeat() {
             navigation.navigate('Cart', {
                 selectedSeats,
                 event,
-                totalPrice
+                totalPrice,
+                expiresAt: expiresAt.toISOString()
             })
         } catch (error) {
-            alert('Error reserving seats. Please try again.')
+            console.error('Error reserving seats:', error)
+
+            // Network error
+            if (error.message === 'Failed to fetch' || error.message.includes('network')) {
+                alert('Network error. Please check your internet connection and try again.')
+            }
+            // Specific seat error
+            else if (error.message && error.message.includes('Seat')) {
+                alert(error.message)
+            }
+            // Generic error
+            else {
+                alert('Error reserving seats. Please try again.')
+            }
+
+            // Refresh seats to show current status
+            await fetchSeats()
         }
     }
 
