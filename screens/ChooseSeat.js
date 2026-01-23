@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
+import Skeleton from '../components/Skeleton'
 
 export default function ChooseSeat() {
     const navigation = useNavigation()
@@ -174,7 +175,7 @@ export default function ChooseSeat() {
                     .upsert({
                         user_id: user.id,
                         seat_id: `${seat.row_letter}${seat.seat_number}`,
-                        event_id: 'event-1',
+                        event_id: event.id,
                         row_letter: seat.row_letter,
                         seat_number: seat.seat_number,
                         expires_at: expiresAt.toISOString()
@@ -253,15 +254,31 @@ export default function ChooseSeat() {
                     <Text className="font-medium text-[12px] text-text-tertiary-color"> {event.date}</Text>
                 </View>
 
-                <TouchableOpacity onPress={() => setShowMap(!showMap)}>
-                    <View className="bg-tertiary-color self-center h-[40px] w-[340px] items-center justify-center mt-6 rounded">
-                        <Text className="font-medium text-[11px] text-secondary-color">
-                            {showMap ? 'Choose Seat' : 'View Seating Map'}
-                        </Text>
+                {/* Loading State / Map Toggle */}
+                {loading ? (
+                    <View className="mt-6 px-3 items-center">
+                        {rows.slice(0, 5).map((row, i) => (
+                            <View key={i} className="flex-row items-center mb-2 gap-1">
+                                <Skeleton width={20} height={20} borderRadius={4} />
+                                <View className="flex-row gap-1">
+                                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                                        <Skeleton key={s} width={28} height={28} borderRadius={2} />
+                                    ))}
+                                </View>
+                            </View>
+                        ))}
                     </View>
-                </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity onPress={() => setShowMap(!showMap)}>
+                        <View className="bg-tertiary-color self-center h-[40px] w-[340px] items-center justify-center mt-6 rounded">
+                            <Text className="font-medium text-[11px] text-secondary-color">
+                                {showMap ? 'Choose Seat' : 'View Seating Map'}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                )}
 
-                {showMap ? (
+                {loading ? null : showMap ? (
                     <View className="mt-6 items-center">
                         <Image
                             source={require('../assets/seatmap.png')}

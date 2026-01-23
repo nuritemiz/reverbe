@@ -6,8 +6,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync, savePushToken } from './services/NotificationService';
 import "./global.css"
 import Login from './screens/Login'
 import Home from './screens/Home'
@@ -25,6 +27,8 @@ import Register from './screens/Register';
 import SignIn from './screens/SignIn';
 import ForgotPassword from './screens/ForgotPassword';
 import ResetPassword from './screens/ResetPassword';
+import NotificationsScreen from './screens/Notifications';
+import EditProfile from './screens/EditProfile';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -32,14 +36,13 @@ const Tab = createBottomTabNavigator();
 function MainTabs({ navigation }) {
   const [hasCartItems, setHasCartItems] = useState(false);
 
-  // Check cart status when tab is focused
+
   useFocusEffect(
     React.useCallback(() => {
       checkCartStatus();
     }, [])
   );
 
-  // Listen to navigation changes to update badge in real-time
   React.useEffect(() => {
     const unsubscribe = navigation.addListener('state', () => {
       checkCartStatus();
@@ -87,7 +90,7 @@ function MainTabs({ navigation }) {
             iconName = 'account';
           }
 
-          // Cart icon with badge
+
           if (route.name === 'CartTab') {
             return (
               <View style={{ position: 'relative' }}>
@@ -159,6 +162,33 @@ export default function App() {
     'Inter-Bold': require('./assets/fonts/Inter-Bold.otf'),
   });
 
+  useEffect(() => {
+    const setupNotifications = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const token = await registerForPushNotificationsAsync();
+        if (token) {
+          await savePushToken(token, user.id);
+        }
+      }
+    };
+
+    setupNotifications();
+
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+    });
+
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification response:', response);
+    });
+
+    return () => {
+      subscription.remove();
+      responseSubscription.remove();
+    };
+  }, []);
+
   if (!fontsLoaded) {
     return null;
   }
@@ -176,12 +206,12 @@ export default function App() {
     >
       <StatusBar style="auto" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="SignIn" component={SignIn} />
         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
         <Stack.Screen name="ResetPassword" component={ResetPassword} />
-        <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Search" component={Search} />
         <Stack.Screen name="Details" component={Details} />
@@ -193,6 +223,8 @@ export default function App() {
         <Stack.Screen name="Tickets" component={Tickets} />
         <Stack.Screen name="MyTickets" component={MyTickets} />
         <Stack.Screen name="Profile" component={Profile} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfile} />
       </Stack.Navigator>
     </NavigationContainer>
   );

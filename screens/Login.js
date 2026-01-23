@@ -1,5 +1,5 @@
-import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React from 'react'
+import { ImageBackground, StyleSheet, Text, TouchableOpacity, View, BackHandler } from 'react-native'
+import React, { useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path } from 'react-native-svg'
@@ -16,6 +16,15 @@ const TicketIcon = ({ size = 34, color = '#1DB954' }) => (
 )
 
 export default function Login({ navigation }) {
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      navigation.navigate('Main');
+      return true;
+    });
+
+    return () => backHandler.remove();
+  }, [navigation]);
+
   return (
 
 

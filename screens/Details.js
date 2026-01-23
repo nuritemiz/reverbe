@@ -6,6 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 
+import Skeleton from '../components/Skeleton'
+
 export default function Details() {
     const navigation = useNavigation()
     const route = useRoute()
@@ -17,12 +19,14 @@ export default function Details() {
     const [seatingModalVisible, setSeatingModalVisible] = useState(false)
     const [standardPrice, setStandardPrice] = useState(null)
     const [premiumPrice, setPremiumPrice] = useState(null)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         fetchEventPrices()
     }, [])
 
     const fetchEventPrices = async () => {
+        setLoading(true)
         const { data, error } = await supabase
             .from('events')
             .select('standard_price, premium_price')
@@ -33,6 +37,7 @@ export default function Details() {
             setStandardPrice(data.standard_price)
             setPremiumPrice(data.premium_price)
         }
+        setLoading(false)
     }
 
     const getEventIcon = (category) => {
@@ -53,9 +58,19 @@ export default function Details() {
         }
     }
 
+    const handleBuyTickets = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+            navigation.navigate('ChooseTier', { event })
+        } else {
+            navigation.navigate('Login')
+        }
+    }
+
     return (
         <SafeAreaView className="bg-primary-color flex-1">
             <ScrollView>
+                {/* ... (Header and Image remain same) */}
                 <View className="flex-row justify-between items-center mt-10 px-3">
                     <MaterialCommunityIcons name="chevron-left" size={30} color="#6E6E73" onPress={() => navigation.goBack()} />
                     <Text className="self-center font-semibold text-[20px] color-text-primary-color">Event Details</Text>
@@ -68,20 +83,21 @@ export default function Details() {
                     resizeMode="cover"
                 />
 
-                <View className="mt-4 px-3 flex-row gap-3">
+                <View className="mt-4 px-3 flex-row gap-3" style={{ paddingRight: 12 }}>
                     <MaterialCommunityIcons className="self-center" name={getEventIcon(event.category)} size={20} color="#1DB954" />
-                    <Text className="font-semibold text-[20px] color-text-primary-color">
+                    <Text className="font-semibold text-[18px] color-text-primary-color" style={{ flex: 1, flexShrink: 1 }} numberOfLines={2}>
                         {event.title}
                     </Text>
                 </View>
-                <View className="flex-row items-center px-3 mt-1">
-                    <Text className="font-medium text-[16px] text-text-secondary-color">
+                <View className="flex-row flex-wrap items-center px-3 mt-1" style={{ paddingRight: 12 }}>
+                    <Text className="font-medium text-[14px] text-text-secondary-color" numberOfLines={1} style={{ flexShrink: 1 }}>
                         {event.location}, </Text>
-                    <Text className="font-medium text-[16px] text-text-tertiary-color">{event.city}  </Text>
+                    <Text className="font-medium text-[14px] text-text-tertiary-color">{event.city}  </Text>
                     <Text className="text-[#1DB954] text-[8px]">■ </Text>
-                    <Text className="font-medium text-[14px] text-text-tertiary-color"> {event.date}</Text>
+                    <Text className="font-medium text-[12px] text-text-tertiary-color" style={{ flexShrink: 1 }}> {event.date}</Text>
                 </View>
 
+                {/* Description Section with Skeleton */}
                 <TouchableOpacity
                     onPress={() => setAboutExpanded(!aboutExpanded)}
                     className="flex-row justify-between items-center px-3 mt-6"
@@ -93,13 +109,23 @@ export default function Details() {
                         color="#1DB954"
                     />
                 </TouchableOpacity>
-                <Text
-                    className="font-sans text-[12px] px-3 text-text-tertiary-color mt-1"
-                    numberOfLines={aboutExpanded ? undefined : 2}
-                >
-                    {event.description}
-                </Text>
 
+                {loading ? (
+                    <View className="px-3 mt-2 gap-1">
+                        <Skeleton width="100%" height={12} />
+                        <Skeleton width="90%" height={12} />
+                        <Skeleton width="40%" height={12} />
+                    </View>
+                ) : (
+                    <Text
+                        className="font-sans text-[12px] px-3 text-text-tertiary-color mt-1"
+                        numberOfLines={aboutExpanded ? undefined : 2}
+                    >
+                        {event.description}
+                    </Text>
+                )}
+
+                {/* ... (Rules section remains same) */}
                 <TouchableOpacity
                     onPress={() => setRulesExpanded(!rulesExpanded)}
                     className="flex-row justify-between items-center px-3 mt-6"
@@ -122,21 +148,31 @@ export default function Details() {
                     <Text onPress={() => setSeatingModalVisible(true)} className="text-secondary-color font-medium text-[12px]">View Seating Map</Text>
                 </View>
 
-                <TouchableOpacity
-                    onPress={() => setSelectedTicket('standard')}
-                    className={`w-[340] h-[40] self-center mt-6 justify-between flex-row items-center px-3 rounded-md ${selectedTicket === 'standard' ? 'bg-[#1DB954]' : 'bg-tertiary-color'}`}
-                >
-                    <Text className={`font-medium text-[12px] ${selectedTicket === 'standard' ? 'text-text-primary-color' : 'text-text-primary-color'}`}>Standard Ticket</Text>
-                    <Text className={`font-medium text-[12px] ${selectedTicket === 'standard' ? 'text-text-primary-color' : 'text-secondary-color'}`}>${standardPrice ? standardPrice.toFixed(2) : '---'}</Text>
-                </TouchableOpacity>
+                {/* Ticket Options with Skeleton */}
+                {loading ? (
+                    <View className="mt-6 gap-6 self-center">
+                        <Skeleton width={340} height={40} borderRadius={6} />
+                        <Skeleton width={340} height={40} borderRadius={6} />
+                    </View>
+                ) : (
+                    <>
+                        <TouchableOpacity
+                            onPress={() => setSelectedTicket('standard')}
+                            className={`w-[340] h-[40] self-center mt-6 justify-between flex-row items-center px-3 rounded-md ${selectedTicket === 'standard' ? 'bg-[#1DB954]' : 'bg-tertiary-color'}`}
+                        >
+                            <Text className={`font-medium text-[12px] ${selectedTicket === 'standard' ? 'text-text-primary-color' : 'text-text-primary-color'}`}>Standard Ticket</Text>
+                            <Text className={`font-medium text-[12px] ${selectedTicket === 'standard' ? 'text-text-primary-color' : 'text-secondary-color'}`}>${standardPrice ? standardPrice.toFixed(2) : '---'}</Text>
+                        </TouchableOpacity>
 
-                <TouchableOpacity
-                    onPress={() => setSelectedTicket('premium')}
-                    className={`w-[340] h-[40] self-center mt-6 justify-between flex-row items-center px-3 rounded-md ${selectedTicket === 'premium' ? 'bg-[#1DB954]' : 'bg-tertiary-color'}`}
-                >
-                    <Text className={`font-medium text-[12px] ${selectedTicket === 'premium' ? 'text-text-primary-color' : 'text-text-primary-color'}`}>Premium Package</Text>
-                    <Text className={`font-medium text-[12px] ${selectedTicket === 'premium' ? 'text-text-primary-color' : 'text-secondary-color'}`}>${premiumPrice ? premiumPrice.toFixed(2) : '---'}</Text>
-                </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => setSelectedTicket('premium')}
+                            className={`w-[340] h-[40] self-center mt-6 justify-between flex-row items-center px-3 rounded-md ${selectedTicket === 'premium' ? 'bg-[#1DB954]' : 'bg-tertiary-color'}`}
+                        >
+                            <Text className={`font-medium text-[12px] ${selectedTicket === 'premium' ? 'text-text-primary-color' : 'text-text-primary-color'}`}>Premium Package</Text>
+                            <Text className={`font-medium text-[12px] ${selectedTicket === 'premium' ? 'text-text-primary-color' : 'text-secondary-color'}`}>${premiumPrice ? premiumPrice.toFixed(2) : '---'}</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
 
                 <View className="flex-row justify-between">
                     <View className="px-3 mt-8">
@@ -183,7 +219,7 @@ export default function Details() {
             </ScrollView>
 
             {event.title === 'NY Knicks vs. LA Lakers' ? (
-                <TouchableOpacity onPress={() => navigation.navigate('ChooseTier', { event })}>
+                <TouchableOpacity onPress={handleBuyTickets}>
                     <View className="w-[340px] h-[44px] bg-secondary-color justify-center self-center items-center rounded-md mb-4">
                         <Text className="font-medium text-text-primary-color">Buy Tickets</Text>
                     </View>

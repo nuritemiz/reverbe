@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
+import Skeleton from '../components/Skeleton'
 
 export default function Cart() {
     const navigation = useNavigation()
@@ -204,12 +205,42 @@ export default function Cart() {
         }
     }
 
+    const CartSkeleton = () => (
+        <ScrollView>
+            <View className="flex-row justify-between items-center mt-10 px-3">
+                <MaterialCommunityIcons name="chevron-left" size={30} color="#6E6E73" />
+                <Text className="font-semibold text-[20px] color-text-primary-color">Cart</Text>
+                <View style={{ width: 30 }} />
+            </View>
+
+            <View className="mx-3 mt-6">
+                <Skeleton width="100%" height={50} borderRadius={6} />
+            </View>
+
+            <View className="px-3 mt-8">
+                <Skeleton width={100} height={20} />
+                <View className="mt-4 gap-4">
+                    <Skeleton width="100%" height={80} borderRadius={6} />
+                    <Skeleton width="100%" height={80} borderRadius={6} />
+                </View>
+            </View>
+
+            <View className="px-3 mt-8">
+                <View className="flex-row justify-between items-center">
+                    <Skeleton width={80} height={20} />
+                    <Skeleton width={60} height={14} />
+                </View>
+                <View className="mt-4 gap-4">
+                    <Skeleton width="100%" height={100} borderRadius={6} />
+                </View>
+            </View>
+        </ScrollView>
+    )
+
     return (
         <SafeAreaView className="bg-primary-color flex-1">
             {loading ? (
-                <View className="flex-1 justify-center items-center">
-                    <Text className="text-text-primary-color">Loading cart...</Text>
-                </View>
+                <CartSkeleton />
             ) : (
                 <>
                     <ScrollView>

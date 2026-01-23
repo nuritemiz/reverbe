@@ -4,14 +4,17 @@ import { useNavigation } from '@react-navigation/native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../lib/supabase';
+import Skeleton from '../components/Skeleton';
 
-export default function Search() {
+export default function Search({ route }) {
   const navigation = useNavigation()
   const inputRef = useRef(null)
 
+  // Get initialCategory from navigation params (if navigating from Home categories)
+  const initialCategory = route?.params?.initialCategory || 'All'
 
   const [searchText, setSearchText] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory)
   const [allEvents, setAllEvents] = useState([])
   const [filteredEvents, setFilteredEvents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -85,11 +88,11 @@ export default function Search() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 12 }} className="mt-4 min-h-[50] max-h-[50]">
-        {['All', 'Trends', 'Sports', 'Theater', 'Festival'].map((cat) => (
+        {['All', 'Music', 'Cinema', 'Sports', 'Theater', 'Festival'].map((cat) => (
           <TouchableOpacity key={cat} onPress={() => setSelectedCategory(cat)}>
             <View className={`h-[40] px-4 rounded-md items-center justify-center flex-row gap-2 ${selectedCategory === cat ? 'bg-secondary-color' : 'bg-tertiary-color'}`}>
               <MaterialCommunityIcons
-                name={cat === 'All' ? 'view-grid' : cat === 'Trends' ? 'trending-up' : cat === 'Sports' ? 'trophy' : cat === 'Theater' ? 'drama-masks' : 'tent'}
+                name={cat === 'All' ? 'view-grid' : cat === 'Music' ? 'music' : cat === 'Cinema' ? 'movie-roll' : cat === 'Sports' ? 'trophy' : cat === 'Theater' ? 'drama-masks' : 'tent'}
                 size={20}
                 color={selectedCategory === cat ? '#000' : '#1DB954'}
               />
@@ -106,7 +109,22 @@ export default function Search() {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#1DB954" className="mt-20" />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, gap: 10 }}>
+          {[1, 2, 3].map((key) => (
+            <View key={key} className="w-[340] ml-3 mt-4">
+              <Skeleton width="100%" height={110} borderRadius={12} />
+              <View className="mt-2 text-text-primary-color font-medium text-[16px]">
+                <Skeleton width={200} height={20} />
+              </View>
+              <View className="mt-1">
+                <Skeleton width={150} height={14} />
+              </View>
+              <View className="mt-1">
+                <Skeleton width={100} height={12} />
+              </View>
+            </View>
+          ))}
+        </ScrollView>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, gap: 10 }}>
           {filteredEvents.map((item) => (

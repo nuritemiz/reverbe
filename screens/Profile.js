@@ -1,32 +1,50 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
+import Skeleton from '../components/Skeleton'
 
 export default function Profile() {
     const navigation = useNavigation()
 
     const [user, setUser] = useState(null);
+    const [avatarUrl, setAvatarUrl] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const fetchUser = async () => {
+        setLoading(true);
         const { data, error } = await supabase.auth.getUser();
         if (data?.user) {
             setUser(data.user);
+            // Fetch avatar from profiles
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('avatar_url')
+                .eq('id', data.user.id)
+                .single();
+            if (profile?.avatar_url) {
+                setAvatarUrl(profile.avatar_url);
+            }
+        } else {
+            navigation.replace('Login');
         }
+        setLoading(false);
     };
 
-    useEffect(() => {
-        fetchUser();
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchUser();
+        }, [])
+    );
 
     const menuItems = [
         { id: 1, title: 'My tickets', icon: 'chevron-right', screen: 'MyTickets' },
         { id: 2, title: 'Payment methods', icon: 'chevron-right', screen: null },
         { id: 3, title: 'Order history', icon: 'chevron-right', screen: null },
         { id: 4, title: 'Account details', icon: 'chevron-right', screen: null },
-        { id: 5, title: 'Notifications', icon: 'chevron-right', screen: null },
+        { id: 5, title: 'Notifications', icon: 'chevron-right', screen: 'Notifications' },
     ]
 
     const supportItems = [
@@ -42,11 +60,17 @@ export default function Profile() {
     const handleLogout = async () => {
         try {
             await supabase.auth.signOut();
-            navigation.navigate('Login');
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Main' }],
+            });
         } catch (error) {
             console.error('Error signing out:', error);
             // Navigate anyway even if sign out fails
-            navigation.navigate('Login');
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Main' }],
+            });
         }
     }
 
@@ -70,19 +94,38 @@ export default function Profile() {
 
                 <View className="  mt-6 px-4 py-4 rounded-xl flex-row justify-between items-center">
                     <View className="flex-row items-center flex-1">
-                        <View className="w-[35] h-[35] bg-[#2C2C2E] rounded-lg items-center justify-center">
-                            <MaterialCommunityIcons name="account" size={24} color="#0E0E0E" />
+                        <View className="w-[35] h-[35] bg-[#2C2C2E] rounded-full items-center justify-center overflow-hidden">
+                            {loading ? (
+                                <Skeleton width={35} height={35} borderRadius={18} />
+                            ) : avatarUrl ? (
+                                <Image
+                                    source={{ uri: avatarUrl }}
+                                    style={{ width: 35, height: 35 }}
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <MaterialCommunityIcons name="account" size={24} color="#6E6E73" />
+                            )}
                         </View>
                         <View className="ml-3 flex-1">
-                            <Text className="text-text-primary-color font-semibold text-[18px]">
-                                {user?.user_metadata?.full_name || user?.email || 'Kullanıcı adı'}
-                            </Text>
-                            <Text className="text-text-secondary-color text-[13px] ">
-                                {user?.email || 'E-posta'}
-                            </Text>
+                            {loading ? (
+                                <View className="gap-2">
+                                    <Skeleton width={120} height={18} />
+                                    <Skeleton width={150} height={13} />
+                                </View>
+                            ) : (
+                                <>
+                                    <Text className="text-text-primary-color font-semibold text-[18px]">
+                                        {user?.user_metadata?.full_name || user?.email || 'Kullanıcı adı'}
+                                    </Text>
+                                    <Text className="text-text-secondary-color text-[13px] ">
+                                        {user?.email || 'E-posta'}
+                                    </Text>
+                                </>
+                            )}
                         </View>
                     </View>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
                         <Text className="text-secondary-color font-semibold text-[13px]">Edit profile</Text>
                     </TouchableOpacity>
                 </View>

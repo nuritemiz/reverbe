@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons'
 import { useNavigation, useRoute, CommonActions } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
+import { scheduleEventReminder } from '../services/NotificationService'
 
 
 export default function Checkout() {
@@ -100,6 +101,8 @@ export default function Checkout() {
             if (deleteError) {
                 console.error('Error deleting cart reservations:', deleteError)
             }
+
+            await scheduleEventReminder(event, { id: null }, user.id)
 
             navigation.dispatch(
                 CommonActions.reset({

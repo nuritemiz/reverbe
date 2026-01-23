@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
+import Skeleton from '../components/Skeleton'
 
 export default function MyTickets() {
     const navigation = useNavigation()
@@ -59,6 +60,7 @@ export default function MyTickets() {
                 console.log('[MyTickets] No tickets found')
                 setUpcomingTickets([])
                 setHistoryTickets([])
+                setLoading(false) // Set loading false here too
                 return
             }
 
@@ -97,6 +99,20 @@ export default function MyTickets() {
         await fetchTickets()
     }
 
+    const TicketSkeleton = () => (
+        <View className="bg-tertiary-color mx-3 mb-4 rounded-xl overflow-hidden p-4 flex-row">
+            <Skeleton width={100} height={100} borderRadius={8} />
+            <View className="flex-1 ml-4 justify-between">
+                <View className="gap-2">
+                    <Skeleton width="80%" height={16} />
+                    <Skeleton width="60%" height={12} />
+                    <Skeleton width="40%" height={12} />
+                </View>
+                <Skeleton width="100%" height={36} borderRadius={6} />
+            </View>
+        </View>
+    )
+
     return (
         <SafeAreaView className="bg-primary-color flex-1">
             <View className="flex-row justify-between items-center mt-10 px-3">
@@ -129,118 +145,115 @@ export default function MyTickets() {
                 </TouchableOpacity>
             </View>
 
-            {loading ? (
-                <View className="flex-1 justify-center items-center mt-20">
-                    <ActivityIndicator size="large" color="#1DB954" />
-                    <Text className="text-text-secondary-color text-[14px] mt-4">Loading tickets...</Text>
-                </View>
-            ) : (
-                <ScrollView
-                    className="mt-6"
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            tintColor="#1DB954"
-                            colors={['#1DB954']}
-                        />
-                    }
-                >
-                    {activeTab === 'upcoming' ? (
-                        upcomingTickets.length > 0 ? (
-                            upcomingTickets.map((ticket) => (
-                                <View key={ticket.id} className="bg-tertiary-color mx-3 mb-4 rounded-xl overflow-hidden">
-                                    <View className="flex-row p-4">
-                                        <Image
-                                            source={{ uri: ticket.image }}
-                                            className="w-[100] h-[100] rounded-lg"
-                                            resizeMode="cover"
-                                        />
-                                        <View className="flex-1 ml-4 justify-between">
-                                            <View>
-                                                <Text className="text-text-primary-color font-semibold text-[16px]">
-                                                    {ticket.eventTitle}
-                                                </Text>
-                                                <Text className="text-text-secondary-color text-[12px] mt-1">
-                                                    {ticket.venue}
-                                                </Text>
-                                                <Text className="text-text-tertiary-color text-[12px] mt-1">
-                                                    {ticket.date}
-                                                </Text>
-                                            </View>
-                                            <TouchableOpacity
-                                                onPress={() => navigation.navigate('Tickets', {
-                                                    cartSeats: ticket.tickets,
-                                                    event: {
-                                                        id: ticket.id,
-                                                        title: ticket.eventTitle,
-                                                        venue: ticket.venue,
-                                                        date: ticket.date,
-                                                        image_url: ticket.image
-                                                    }
-                                                })}
-                                                className="bg-secondary-color h-[36] rounded-md justify-center items-center mt-2"
-                                            >
-                                                <Text className="text-white font-medium text-[14px]">View Ticket</Text>
-                                            </TouchableOpacity>
+            <ScrollView
+                className="mt-6"
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor="#1DB954"
+                        colors={['#1DB954']}
+                    />
+                }
+            >
+                {loading ? (
+                    <View className="mt-2">
+                        {[1, 2, 3].map((i) => <TicketSkeleton key={i} />)}
+                    </View>
+                ) : activeTab === 'upcoming' ? (
+                    upcomingTickets.length > 0 ? (
+                        upcomingTickets.map((ticket) => (
+                            <View key={ticket.id} className="bg-tertiary-color mx-3 mb-4 rounded-xl overflow-hidden">
+                                <View className="flex-row p-4">
+                                    <Image
+                                        source={{ uri: ticket.image }}
+                                        className="w-[100] h-[100] rounded-lg"
+                                        resizeMode="cover"
+                                    />
+                                    <View className="flex-1 ml-4 justify-between">
+                                        <View>
+                                            <Text className="text-text-primary-color font-semibold text-[16px]">
+                                                {ticket.eventTitle}
+                                            </Text>
+                                            <Text className="text-text-secondary-color text-[12px] mt-1">
+                                                {ticket.venue}
+                                            </Text>
+                                            <Text className="text-text-tertiary-color text-[12px] mt-1">
+                                                {ticket.date}
+                                            </Text>
                                         </View>
+                                        <TouchableOpacity
+                                            onPress={() => navigation.navigate('Tickets', {
+                                                cartSeats: ticket.tickets,
+                                                event: {
+                                                    id: ticket.id,
+                                                    title: ticket.eventTitle,
+                                                    venue: ticket.venue,
+                                                    date: ticket.date,
+                                                    image_url: ticket.image
+                                                }
+                                            })}
+                                            className="bg-secondary-color h-[36] rounded-md justify-center items-center mt-2"
+                                        >
+                                            <Text className="text-white font-medium text-[14px]">View Ticket</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
-                            ))
-                        ) : (
-                            <View className="items-center justify-center mt-20">
-                                <Text className="text-text-secondary-color text-[16px]">No upcoming tickets</Text>
                             </View>
-                        )
+                        ))
                     ) : (
-                        historyTickets.length > 0 ? (
-                            historyTickets.map((ticket) => (
-                                <View key={ticket.id} className="bg-tertiary-color mx-3 mb-4 rounded-xl overflow-hidden">
-                                    <View className="flex-row p-4">
-                                        <Image
-                                            source={{ uri: ticket.image }}
-                                            className="w-[100] h-[100] rounded-lg"
-                                            resizeMode="cover"
-                                        />
-                                        <View className="flex-1 ml-4 justify-between">
-                                            <View>
-                                                <Text className="text-text-primary-color font-semibold text-[16px]">
-                                                    {ticket.eventTitle}
-                                                </Text>
-                                                <Text className="text-text-secondary-color text-[12px] mt-1">
-                                                    {ticket.venue}
-                                                </Text>
-                                                <Text className="text-text-tertiary-color text-[12px] mt-1">
-                                                    {ticket.date}
-                                                </Text>
-                                            </View>
-                                            <TouchableOpacity
-                                                onPress={() => navigation.navigate('Tickets', {
-                                                    cartSeats: ticket.tickets,
-                                                    event: {
-                                                        id: ticket.id,
-                                                        title: ticket.eventTitle,
-                                                        venue: ticket.venue,
-                                                        date: ticket.date,
-                                                        image_url: ticket.image
-                                                    }
-                                                })}
-                                                className="bg-secondary-color h-[36] rounded-md justify-center items-center mt-2"
-                                            >
-                                                <Text className="text-white font-medium text-[14px]">View Ticket</Text>
-                                            </TouchableOpacity>
+                        <View className="items-center justify-center mt-20">
+                            <Text className="text-text-secondary-color text-[16px]">No upcoming tickets</Text>
+                        </View>
+                    )
+                ) : (
+                    historyTickets.length > 0 ? (
+                        historyTickets.map((ticket) => (
+                            <View key={ticket.id} className="bg-tertiary-color mx-3 mb-4 rounded-xl overflow-hidden">
+                                <View className="flex-row p-4">
+                                    <Image
+                                        source={{ uri: ticket.image }}
+                                        className="w-[100] h-[100] rounded-lg"
+                                        resizeMode="cover"
+                                    />
+                                    <View className="flex-1 ml-4 justify-between">
+                                        <View>
+                                            <Text className="text-text-primary-color font-semibold text-[16px]">
+                                                {ticket.eventTitle}
+                                            </Text>
+                                            <Text className="text-text-secondary-color text-[12px] mt-1">
+                                                {ticket.venue}
+                                            </Text>
+                                            <Text className="text-text-tertiary-color text-[12px] mt-1">
+                                                {ticket.date}
+                                            </Text>
                                         </View>
+                                        <TouchableOpacity
+                                            onPress={() => navigation.navigate('Tickets', {
+                                                cartSeats: ticket.tickets,
+                                                event: {
+                                                    id: ticket.id,
+                                                    title: ticket.eventTitle,
+                                                    venue: ticket.venue,
+                                                    date: ticket.date,
+                                                    image_url: ticket.image
+                                                }
+                                            })}
+                                            className="bg-secondary-color h-[36] rounded-md justify-center items-center mt-2"
+                                        >
+                                            <Text className="text-white font-medium text-[14px]">View Ticket</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
-                            ))
-                        ) : (
-                            <View className="items-center justify-center mt-20">
-                                <Text className="text-text-secondary-color text-[16px]">No ticket history</Text>
                             </View>
-                        )
-                    )}
-                </ScrollView>
-            )}
+                        ))
+                    ) : (
+                        <View className="items-center justify-center mt-20">
+                            <Text className="text-text-secondary-color text-[16px]">No ticket history</Text>
+                        </View>
+                    )
+                )}
+            </ScrollView>
         </SafeAreaView>
     )
 }

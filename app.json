@@ -7,24 +7,49 @@
     "scheme": "reverbe",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "newArchEnabled": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "package": "com.reverbe.app",
+      "edgeToEdgeEnabled": true,
+      "newArchEnabled": true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDw0Pid2wXwnNf-PAYMl21EM3h1NtKpDFw"
+        }
+      }
     },
     "web": {
       "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "newArchEnabled": true
+          },
+          "ios": {
+            "newArchEnabled": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0b0372fd-132a-4214-b2b0-21be1c72cf0b"
+      }
     }
   }
 }
