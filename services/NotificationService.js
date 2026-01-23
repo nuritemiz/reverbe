@@ -199,9 +199,7 @@ export async function fetchNotifications(userId) {
             .select(`
         *,
         events (
-          id,
-          title,
-          image_url
+          *
         )
       `)
             .eq('user_id', userId)

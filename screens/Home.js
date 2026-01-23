@@ -3,9 +3,10 @@ import React, { useState, useRef, useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import Skeleton from '../components/Skeleton'
+import { getUnreadCount } from '../services/NotificationService'
 
 export default function Home() {
   const navigation = useNavigation()
@@ -18,6 +19,20 @@ export default function Home() {
   const [ufcEvent, setUfcEvent] = useState(null)
   const [userName, setUserName] = useState('')
   const [loading, setLoading] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchUnread = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const count = await getUnreadCount(user.id)
+          setUnreadCount(count)
+        }
+      }
+      fetchUnread()
+    }, [])
+  )
 
   const dotAnimations = useRef([0, 1, 2].map(() => new Animated.Value(0))).current
 
@@ -151,10 +166,19 @@ export default function Home() {
   return (
     <SafeAreaView className="flex-1 bg-primary-color">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 12 }}>
-        <TouchableOpacity onPress={() => userName ? navigation.navigate('Profile') : navigation.navigate('Login')} className="mt-10 ml-3 flex-row items-center">
-          <Text className="text-text-primary-color font-semibold text-[20px]">{userName ? `Hello, ${userName}` : 'Login / Sign Up'}</Text>
-          <MaterialCommunityIcons name={userName ? "hand-wave" : "login"} size={24} color="#1DB954" className="ml-2" />
-        </TouchableOpacity>
+        <View className="mt-10 mx-3 flex-row justify-between items-center">
+          <TouchableOpacity onPress={() => userName ? navigation.navigate('Profile') : navigation.navigate('Login')} className="flex-row items-center">
+            <Text className="text-text-primary-color font-semibold text-[20px]">{userName ? `Hello, ${userName}` : 'Login / Sign Up'}</Text>
+            <MaterialCommunityIcons name={userName ? "hand-wave" : "login"} size={24} color="#1DB954" className="ml-2" />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} className="relative">
+            <MaterialCommunityIcons name="bell-outline" size={26} color="#1DB954" />
+            {unreadCount > 0 && (
+              <View className="absolute top-0 right-0 bg-[#FF3B30] w-2.5 h-2.5 rounded-full border border-[#1C1C1E]" />
+            )}
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity onPress={() => navigation.navigate('Search')}>
           <View className="w-[340] self-center items-center justify-center h-[50] mt-6 rounded-xl bg-tertiary-color flex-row">
