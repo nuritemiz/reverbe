@@ -247,7 +247,7 @@ export default function ChooseSeat() {
     return (
         <SafeAreaView className="bg-primary-color flex-1">
             <ScrollView>
-                <View className="flex-row justify-between items-center mt-10 px-3">
+                <View className="flex-row justify-between items-center mt-6 px-3">
                     <MaterialCommunityIcons name="chevron-left" size={30} color="#6E6E73" onPress={() => navigation.goBack()} />
                     <Text className="font-semibold text-[20px] color-text-primary-color">Choose Seat</Text>
                     <View style={{ width: 30 }} />
@@ -297,14 +297,32 @@ export default function ChooseSeat() {
                             className="w-[340] h-[300] rounded-lg"
                             resizeMode="contain"
                         />
-                        <View className="flex-row justify-between px-3 mt-6 w-[340]">
-                            {getTicketTypes(event).map((ticket) => (
-                                <View key={ticket.id}>
-                                    <Text style={{ color: ticket.color, fontSize: 14 }}>■ <Text className="font-medium text-[12px] color-text-primary-color">{ticket.name}</Text></Text>
-                                    <Text className="font-medium text-text-secondary-color text-[10px]">{ticket.section}</Text>
-                                    <Text style={{ color: ticket.color, fontSize: 10, fontWeight: '500' }}>{ticket.type}</Text>
-                                </View>
-                            ))}
+                        <View className="flex-row w-[340px] px-3 mt-6 flex-wrap">
+                            {(() => {
+                                const tiers = getTicketTypes(event)
+                                return tiers.map((ticket, index) => {
+                                    const isTwoItems = tiers.length === 2
+                                    let widthClass = isTwoItems ? 'w-1/2' : 'w-1/3'
+                                    let alignClass = 'items-start'
+
+                                    if (isTwoItems) {
+                                        if (index === 1) alignClass = 'items-end'
+                                    } else {
+                                        if (index % 3 === 1) alignClass = 'items-center'
+                                        else if (index % 3 === 2) alignClass = 'items-end'
+                                    }
+
+                                    return (
+                                        <View key={ticket.id} className={`${widthClass} ${alignClass} mb-4`}>
+                                            <View className="items-start">
+                                                <Text style={{ color: ticket.color, fontSize: 14 }}>■ <Text className="font-medium text-[12px] color-text-primary-color">{ticket.name}</Text></Text>
+                                                <Text className="font-medium text-text-secondary-color text-[10px]">{ticket.section}</Text>
+                                                <Text style={{ color: ticket.color, fontSize: 10, fontWeight: '500' }}>{ticket.type}</Text>
+                                            </View>
+                                        </View>
+                                    )
+                                })
+                            })()}
                         </View>
                     </View>
                 ) : (
@@ -388,21 +406,24 @@ export default function ChooseSeat() {
 
                         <View className="pb-48" />
                     </>
-                )}
-            </ScrollView>
+                )
+                }
+            </ScrollView >
 
-            {!showMap && (
-                <TouchableOpacity
-                    className="absolute bottom-10 left-3 right-3"
-                    onPress={buyTickets}
-                    disabled={selectedSeats.length === 0}
-                >
-                    <View className="h-[52px] rounded-md bg-secondary-color flex-row justify-between items-center px-5">
-                        <Text className="font-medium text-[16px] text-white">Buy Tickets</Text>
-                        <Text className="font-semibold text-[16px] text-white">${totalPrice.toFixed(2)}</Text>
-                    </View>
-                </TouchableOpacity>
-            )}
-        </SafeAreaView>
+            {
+                !showMap && (
+                    <TouchableOpacity
+                        className="absolute bottom-10 left-3 right-3"
+                        onPress={buyTickets}
+                        disabled={selectedSeats.length === 0}
+                    >
+                        <View className="h-[52px] rounded-md bg-secondary-color flex-row justify-between items-center px-5">
+                            <Text className="font-medium text-[16px] text-white">Buy Tickets</Text>
+                            <Text className="font-semibold text-[16px] text-white">${totalPrice.toFixed(2)}</Text>
+                        </View>
+                    </TouchableOpacity>
+                )
+            }
+        </SafeAreaView >
     )
 }

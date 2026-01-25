@@ -23,7 +23,7 @@ export default function ChooseTier() {
     return (
         <SafeAreaView className="bg-primary-color flex-1">
             <ScrollView>
-                <View className="flex-row justify-center gap-1 px-3 mt-6">
+                <View className="flex-row justify-between items-center px-3 mt-6">
                     <MaterialCommunityIcons name="chevron-left" size={30} color="#6E6E73" onPress={() => navigation.goBack()} />
                     <Text className="font-semibold text-[20px] color-text-primary-color">Choose Section</Text>
                     <View style={{ width: 30 }} />
@@ -48,15 +48,30 @@ export default function ChooseTier() {
                     resizeMode="contain"
                 />
 
-                <View className="flex-row justify-center gap-20 px-3 mt-6">
-                    {tiers.map((tier) => (
-                        <View key={tier.id} className="mx-1">
-                            <Text style={{ color: tier.color, fontSize: 16 }}>■ <Text className="font-medium text-[14px] color-text-primary-color">{tier.name}</Text>
-                            </Text>
-                            <Text className="font-medium text-text-secondary-color text-[10px]">{tier.section}</Text>
-                            <Text style={{ color: tier.color, fontSize: 12, fontWeight: '500' }}>{tier.type}</Text>
-                        </View>
-                    ))}
+                <View className="flex-row w-[340px] self-center mt-6 flex-wrap">
+                    {tiers.map((tier, index) => {
+                        const isTwoItems = tiers.length === 2
+                        let widthClass = isTwoItems ? 'w-1/2' : 'w-1/3'
+                        let alignClass = 'items-start'
+
+                        if (isTwoItems) {
+                            if (index === 1) alignClass = 'items-end'
+                        } else {
+                            if (index % 3 === 1) alignClass = 'items-center'
+                            else if (index % 3 === 2) alignClass = 'items-end'
+                        }
+
+                        return (
+                            <View key={tier.id} className={`${widthClass} ${alignClass} mb-4`}>
+                                <View className="items-start">
+                                    <Text style={{ color: tier.color, fontSize: 16 }}>■ <Text className="font-medium text-[14px] color-text-primary-color">{tier.name}</Text>
+                                    </Text>
+                                    <Text className="font-medium text-text-secondary-color text-[10px]">{tier.section}</Text>
+                                    <Text style={{ color: tier.color, fontSize: 12, fontWeight: '500' }}>{tier.type}</Text>
+                                </View>
+                            </View>
+                        )
+                    })}
                 </View>
 
                 <View className="px-3 mt-10">
