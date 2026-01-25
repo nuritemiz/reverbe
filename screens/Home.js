@@ -110,22 +110,22 @@ export default function Home() {
     const { data: coldplay } = await supabase
       .from('events')
       .select('*')
-      .eq('title', 'Coldplay: Music of The Spheres Tour')
-      .single()
+      .ilike('title', '%Coldplay%')
+      .maybeSingle()
     if (coldplay) setColdplayEvent(coldplay)
 
     const { data: weeknd } = await supabase
       .from('events')
       .select('*')
-      .eq('title', 'The Weeknd: After Hours til Dawn Tour')
-      .single()
+      .ilike('title', '%Weeknd%')
+      .maybeSingle()
     if (weeknd) setWeekndEvent(weeknd)
 
     const { data: ufc } = await supabase
       .from('events')
       .select('*')
-      .eq('title', 'Jones vs. Miocic')
-      .single()
+      .ilike('title', '%Jones%')
+      .maybeSingle()
     if (ufc) setUfcEvent(ufc)
   }
 

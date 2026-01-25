@@ -22,9 +22,8 @@ export default function Checkout() {
     const [cardName, setCardName] = useState('')
     const [saveCard, setSaveCard] = useState(false)
 
-    const ticketPrice = 120.00
     const serviceFee = 4.00
-    const subtotal = cartSeats.length * ticketPrice
+    const subtotal = cartSeats.reduce((sum, seat) => sum + (seat.price || 0), 0)
     const totalAmount = subtotal + serviceFee
 
     useEffect(() => {
@@ -65,7 +64,7 @@ export default function Checkout() {
                     seat_number: seat.seat_number,
                     row_letter: seat.row_letter,
                     section: seat.section,
-                    price: ticketPrice,
+                    price: seat.price,
                     order_number: orderNumber,
                 }
 

@@ -8,6 +8,8 @@ import { supabase } from '../lib/supabase'
 
 import Skeleton from '../components/Skeleton'
 
+import { getEventIcon, getSeatingMapImage, getTicketTypes } from '../utils/seatUtils'
+
 export default function Details() {
     const navigation = useNavigation()
     const route = useRoute()
@@ -39,44 +41,6 @@ export default function Details() {
         }
         setLoading(false)
     }
-
-    const getEventIcon = (category) => {
-        if (!category) return 'ticket'
-
-        const cat = category.toLowerCase()
-        if (cat.includes('trends') || cat.includes('music') || cat.includes('concert') || cat.includes('festival')) return 'music-note'
-        if (cat.includes('sports') || cat.includes('basketball') || cat.includes('football')) return 'trophy'
-        if (cat.includes('theater') || cat.includes('comedy')) return 'drama-masks'
-        return 'ticket'
-    }
-
-    const getSeatingMapImage = () => {
-        let filename = 'cinema.png' // Default fallback
-
-        if (!event || !event.category) return supabase.storage.from('seating-plans').getPublicUrl(filename).data.publicUrl
-
-        const category = event.category.toLowerCase()
-        const title = event.title ? event.title.toLowerCase() : ''
-
-        if (title.includes('gregory porter')) {
-            filename = 'jazz.png'
-        } else if (title.includes('knicks') || title.includes('lakers')) {
-            filename = 'nyknicks.png' // Specific match first
-        } else if (title.includes('ufc') || category.includes('ufc')) {
-            filename = 'UFC.png'
-        } else if (category.includes('festival') || category.includes('trends') || category.includes('music') || category.includes('concert')) {
-            filename = 'festival,trends,music.png'
-        } else if (category.includes('theater') || category.includes('comedy')) {
-            filename = 'theater.png'
-        } else if (category.includes('cinema')) {
-            filename = 'cinema.png'
-        }
-
-        const { data } = supabase.storage.from('seating-plans').getPublicUrl(filename)
-
-        return data.publicUrl
-    }
-
 
     const handleBuyTickets = async () => {
         const { data: { user } } = await supabase.auth.getUser()
@@ -176,21 +140,16 @@ export default function Details() {
                     </View>
                 ) : (
                     <>
-                        <TouchableOpacity
-                            onPress={() => setSelectedTicket('standard')}
-                            className={`w-[340] h-[40] self-center mt-6 justify-between flex-row items-center px-3 rounded-md ${selectedTicket === 'standard' ? 'bg-[#1DB954]' : 'bg-tertiary-color'}`}
-                        >
-                            <Text className={`font-medium text-[12px] ${selectedTicket === 'standard' ? 'text-text-primary-color' : 'text-text-primary-color'}`}>Standard Ticket</Text>
-                            <Text className={`font-medium text-[12px] ${selectedTicket === 'standard' ? 'text-text-primary-color' : 'text-secondary-color'}`}>${standardPrice ? standardPrice.toFixed(2) : '---'}</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            onPress={() => setSelectedTicket('premium')}
-                            className={`w-[340] h-[40] self-center mt-6 justify-between flex-row items-center px-3 rounded-md ${selectedTicket === 'premium' ? 'bg-[#1DB954]' : 'bg-tertiary-color'}`}
-                        >
-                            <Text className={`font-medium text-[12px] ${selectedTicket === 'premium' ? 'text-text-primary-color' : 'text-text-primary-color'}`}>Premium Package</Text>
-                            <Text className={`font-medium text-[12px] ${selectedTicket === 'premium' ? 'text-text-primary-color' : 'text-secondary-color'}`}>${premiumPrice ? premiumPrice.toFixed(2) : '---'}</Text>
-                        </TouchableOpacity>
+                        {getTicketTypes(event).slice(0, 2).map((ticket) => (
+                            <TouchableOpacity
+                                key={ticket.id}
+                                onPress={() => setSelectedTicket(ticket.id)}
+                                className={`w-[340] h-[40] self-center mt-6 justify-between flex-row items-center px-3 rounded-md ${selectedTicket === ticket.id ? 'bg-[#1DB954]' : 'bg-tertiary-color'}`}
+                            >
+                                <Text className={`font-medium text-[12px] ${selectedTicket === ticket.id ? 'text-text-primary-color' : 'text-text-primary-color'}`}>{ticket.name}</Text>
+                                <Text className={`font-medium text-[12px] ${selectedTicket === ticket.id ? 'text-text-primary-color' : 'text-secondary-color'}`}>{ticket.price}</Text>
+                            </TouchableOpacity>
+                        ))}
                     </>
                 )}
 
@@ -238,17 +197,11 @@ export default function Details() {
 
             </ScrollView>
 
-            {event.title === 'NY Knicks vs. LA Lakers' ? (
-                <TouchableOpacity onPress={handleBuyTickets}>
-                    <View className="w-[340px] h-[44px] bg-secondary-color justify-center self-center items-center rounded-md mb-4">
-                        <Text className="font-medium text-text-primary-color">Buy Tickets</Text>
-                    </View>
-                </TouchableOpacity>
-            ) : (
-                <View className="w-[340px] h-[44px] bg-tertiary-color justify-center self-center items-center rounded-md mb-4">
-                    <Text className="font-medium text-text-tertiary-color">Coming Soon</Text>
+            <TouchableOpacity onPress={handleBuyTickets}>
+                <View className="w-[340px] h-[44px] bg-secondary-color justify-center self-center items-center rounded-md mb-4">
+                    <Text className="font-medium text-text-primary-color">Buy Tickets</Text>
                 </View>
-            )}
+            </TouchableOpacity>
 
             <Modal
                 visible={seatingModalVisible}
@@ -259,7 +212,7 @@ export default function Details() {
                 <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.90)', justifyContent: 'center', alignItems: 'center' }}>
                     <View className="rounded-xl p-4 w-[340]">
                         <Image
-                            source={{ uri: getSeatingMapImage() }}
+                            source={{ uri: getSeatingMapImage(event) }}
                             className="w-full h-[340] rounded-lg"
                             resizeMode="contain"
                         />

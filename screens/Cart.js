@@ -19,9 +19,8 @@ export default function Cart() {
     const [loading, setLoading] = useState(true)
     const [expiresAt, setExpiresAt] = useState(null)
 
-    const ticketPrice = 120.00
     const serviceFee = 4.00
-    const subtotal = cartSeats.length * ticketPrice
+    const subtotal = cartSeats.reduce((sum, seat) => sum + (seat.price || 0), 0)
     const totalAmount = subtotal + serviceFee
 
     useEffect(() => {
@@ -45,48 +44,57 @@ export default function Cart() {
 
             if (error) throw error
 
-            if (reservations && reservations.length > 0) {
-                // Convert reservations to seat format
-                const seats = reservations.map(r => ({
-                    row_letter: r.row_letter,
-                    seat_number: r.seat_number,
-                    section: 'Section 301',
-                    price: ticketPrice
-                }))
+            if (!reservations || reservations.length === 0) {
+                setCartSeats([])
+                setLoading(false)
+                return
+            }
 
-                setCartSeats(seats)
+            // Fetch detailed seat info for each reservation
+            const seatsDetailsPromises = reservations.map(async r => {
+                const { data: seatData } = await supabase
+                    .from('seats')
+                    .select('*')
+                    .eq('event_id', r.event_id)
+                    .eq('row_letter', r.row_letter)
+                    .eq('seat_number', r.seat_number)
+                    .single()
 
-                // Calculate remaining time from expires_at
+                return {
+                    ...r, // reservation info
+                    price: seatData?.price || 120,
+                    section: seatData?.section || 'Section',
+                    tier_name: seatData?.tier_name || 'Standard Ticket'
+                }
+            })
+
+            const seats = await Promise.all(seatsDetailsPromises)
+            setCartSeats(seats)
+
+            // Calculate remaining time from first expiring reservation
+            if (reservations.length > 0) {
                 const firstExpiry = new Date(reservations[0].expires_at)
                 setExpiresAt(firstExpiry)
                 calculateRemainingTime(firstExpiry)
-
-                // Fetch event data - try with event_id from reservation, fallback to hardcoded
-                let eventInfo = null
-                let eventError = null
-
-                // First try with the event_id from reservations
-                const eventIdToFetch = reservations[0].event_id === 'event-1' ? 7 : reservations[0].event_id
-
-                const result = await supabase
-                    .from('events')
-                    .select('*')
-                    .eq('id', eventIdToFetch)
-                    .single()
-
-                eventInfo = result.data
-                eventError = result.error
-
-                if (eventError) {
-                    console.error('Error fetching event:', eventError)
-                } else if (eventInfo) {
-                    setEventData(eventInfo)
-                }
             }
+
+            // Fetch event data
+            const eventIdToFetch = reservations[0].event_id === 'event-1' ? 7 : reservations[0].event_id
+
+            const { data: eventInfo, error: eventError } = await supabase
+                .from('events')
+                .select('*')
+                .eq('id', eventIdToFetch)
+                .single()
+
+            if (eventError) {
+                console.error('Error fetching event:', eventError)
+            } else if (eventInfo) {
+                setEventData(eventInfo)
+            }
+
         } catch (error) {
             console.error('Error loading cart:', error)
-
-            // Network error - show friendly message
             if (error.message === 'Failed to fetch' || error.message?.includes('network')) {
                 alert('Cannot load cart. Please check your internet connection.')
             }
@@ -329,7 +337,7 @@ export default function Cart() {
                                     Looks like you haven't added any tickets yet. Browse events and reserve your seats!
                                 </Text>
                                 <TouchableOpacity
-                                    onPress={() => navigation.navigate('HomeTab')}
+                                    onPress={() => navigation.navigate('Main', { screen: 'HomeTab' })}
                                     className="bg-secondary-color h-[48] w-[200] rounded-lg justify-center items-center mt-44"
                                 >
                                     <Text className="text-text-primary-color font-medium text-[16px]">Browse Events</Text>
@@ -346,7 +354,7 @@ export default function Cart() {
                                     <View className="mb-5">
                                         <Text className="text-text-primary-color font-medium text-[14px]">Order Summary</Text>
                                         <View className="flex-row justify-between mt-2">
-                                            <Text className="text-text-secondary-color text-[12px]">Subtotal ({cartSeats.length} Tickets x ${ticketPrice.toFixed(2)})</Text>
+                                            <Text className="text-text-secondary-color text-[12px]">Subtotal ({cartSeats.length} Tickets)</Text>
                                             <Text className="text-text-secondary-color text-[12px]">${subtotal.toFixed(2)}</Text>
                                         </View>
                                         <View className="flex-row justify-between mt-1">

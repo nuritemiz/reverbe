@@ -3,6 +3,7 @@ import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useRoute } from '@react-navigation/native'
+import { getEventIcon } from '../utils/seatUtils'
 
 export default function Tickets() {
     const navigation = useNavigation()
@@ -23,7 +24,7 @@ export default function Tickets() {
                     cartSeats.map((seat, index) => (
                         <View key={index} className="bg-tertiary-color mx-4 mt-8 rounded-3xl px-5 py-6">
                             <View className="flex-row items-center justify-center">
-                                <MaterialCommunityIcons name="basketball" size={24} color="#1DB954" />
+                                <MaterialCommunityIcons name={getEventIcon(event)} size={24} color="#1DB954" />
                                 <Text className="text-text-primary-color font-semibold text-[18px] ml-2">{event.title}</Text>
                             </View>
 

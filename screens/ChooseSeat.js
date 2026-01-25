@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import Skeleton from '../components/Skeleton'
+import { getSeatingMapImage, getTicketTypes } from '../utils/seatUtils'
 
 export default function ChooseSeat() {
     const navigation = useNavigation()
@@ -55,33 +56,69 @@ export default function ChooseSeat() {
             const { data, error } = await supabase
                 .from('seats')
                 .select('*')
-                .eq('event_id', 'event-1')
+                .eq('event_id', event.id)
 
             if (error) throw error
-            setSeats(data || [])
-        } catch (error) {
 
-            generateLocalSeats()
+            if (data && data.length > 0) {
+                setSeats(data)
+            } else {
+                await initializeEventSeats()
+            }
+        } catch (error) {
+            console.error('Error fetching seats:', error)
+            alert('Error loading seats')
         } finally {
             setLoading(false)
         }
     }
 
-    const generateLocalSeats = () => {
-        const localSeats = []
-        rows.forEach(row => {
+    const initializeEventSeats = async () => {
+        const tiers = getTicketTypes(event)
+        // Sort tiers by higher price (VIP first) to assign to front rows
+        // tiers is already sorted VIP -> General -> Standard from utils
+
+        const newSeats = []
+        const totalRows = rows.length // 8
+
+        // Simple distribution logic
+        // If 3 tiers: A-B (2), C-E (3), F-H (3)
+        // If 2 tiers: A-C (3), D-H (5)
+
+        rows.forEach((row, rowIndex) => {
+            let tier
+            if (tiers.length === 3) {
+                if (rowIndex < 2) tier = tiers[0] // VIP
+                else if (rowIndex < 5) tier = tiers[1] // General
+                else tier = tiers[2] // Standard
+            } else {
+                if (rowIndex < 3) tier = tiers[0] // Premium/VIP
+                else tier = tiers[1] // Standard
+            }
+
             seatNumbers.forEach(num => {
-                localSeats.push({
-                    id: `${row}${num}`,
+                newSeats.push({
+                    event_id: event.id,
                     row_letter: row,
                     seat_number: num,
-                    status: Math.random() < 0.2 ? 'sold' : 'available',
-                    section: 'Section 301',
-                    price: pricePerSeat
+                    status: 'available', // Clean slate for new events
+                    section: tier.section,
+                    price: tier.numericPrice
                 })
             })
         })
-        setSeats(localSeats)
+
+        const { data, error } = await supabase
+            .from('seats')
+            .insert(newSeats)
+            .select()
+
+        if (error) {
+            console.error('Error creating seats:', error)
+            alert('Could not initialize seats for this event.')
+        } else {
+            setSeats(data)
+        }
     }
 
     const getSeatStatus = (row, seatNum) => {
@@ -110,8 +147,8 @@ export default function ChooseSeat() {
             setSelectedSeats(prev => [...prev, {
                 row_letter: row,
                 seat_number: seatNum,
-                section: seat.section || 'Section 301',
-                price: pricePerSeat
+                section: seat.section,
+                price: seat.price
             }])
         }
     }
@@ -129,47 +166,36 @@ export default function ChooseSeat() {
                 return
             }
 
-            // Calculate expiration time (5 minutes from now)
             const expiresAt = new Date()
             expiresAt.setMinutes(expiresAt.getMinutes() + 5)
 
-            // Reserve seats in database
             for (const seat of selectedSeats) {
-                // First check if seat is still available (concurrent selection check)
                 const { data: seatCheck, error: checkError } = await supabase
                     .from('seats')
                     .select('status')
-                    .eq('event_id', 'event-1')
+                    .eq('event_id', event.id)
                     .eq('row_letter', seat.row_letter)
                     .eq('seat_number', seat.seat_number)
                     .single()
 
-                if (checkError) {
-                    if (checkError.code === 'PGRST116') {
-                        throw new Error(`Seat ${seat.row_letter}${seat.seat_number} not found`)
-                    }
-                    throw checkError
-                }
+                if (checkError) throw checkError
 
                 if (seatCheck.status !== 'available') {
-                    alert(`Sorry! Seat ${seat.row_letter}${seat.seat_number} is no longer available. Someone else may have reserved it.`)
-                    // Refresh seats to show current status
+                    alert(`Seat ${seat.row_letter}${seat.seat_number} is no longer available.`)
                     await fetchSeats()
                     setSelectedSeats([])
                     return
                 }
 
-                // Update seat status
                 const { error } = await supabase
                     .from('seats')
                     .update({ status: 'reserved' })
-                    .eq('event_id', 'event-1')
+                    .eq('event_id', event.id)
                     .eq('row_letter', seat.row_letter)
                     .eq('seat_number', seat.seat_number)
 
                 if (error) throw error
 
-                // Add to cart_reservations table (upsert to handle duplicates)
                 const { error: reservationError } = await supabase
                     .from('cart_reservations')
                     .upsert({
@@ -201,21 +227,7 @@ export default function ChooseSeat() {
             })
         } catch (error) {
             console.error('Error reserving seats:', error)
-
-            // Network error
-            if (error.message === 'Failed to fetch' || error.message.includes('network')) {
-                alert('Network error. Please check your internet connection and try again.')
-            }
-            // Specific seat error
-            else if (error.message && error.message.includes('Seat')) {
-                alert(error.message)
-            }
-            // Generic error
-            else {
-                alert('Error reserving seats. Please try again.')
-            }
-
-            // Refresh seats to show current status
+            alert('Error reserving seats. Please try again.')
             await fetchSeats()
         }
     }
@@ -230,7 +242,7 @@ export default function ChooseSeat() {
         }
     }
 
-    const totalPrice = selectedSeats.length * pricePerSeat
+    const totalPrice = selectedSeats.reduce((sum, seat) => sum + seat.price, 0)
 
     return (
         <SafeAreaView className="bg-primary-color flex-1">
@@ -241,17 +253,17 @@ export default function ChooseSeat() {
                     <View style={{ width: 30 }} />
                 </View>
 
-                <View className="mt-6 self-center px-3 flex-row gap-3">
-                    <Text className="font-semibold text-[20px] color-text-primary-color">
+                <View className="mt-6 self-center px-4 flex-row gap-3 w-[340] justify-center">
+                    <Text className="font-semibold text-[20px] color-text-primary-color text-center">
                         {event.title}
                     </Text>
                 </View>
-                <View className="flex-row items-center self-center px-3 mt-1">
-                    <Text className="font-medium text-[14px] text-text-secondary-color">
+                <View className="flex-row items-center self-center px-1 mt-1 w-[340] flex-wrap justify-center">
+                    <Text className="font-medium text-[12px] text-text-secondary-color text-center">
                         {event.location}, </Text>
-                    <Text className="font-medium text-[14px] text-text-tertiary-color">{event.city}  </Text>
-                    <Text className="text-[#1DB954] text-[8px]">■ </Text>
-                    <Text className="font-medium text-[12px] text-text-tertiary-color"> {event.date}</Text>
+                    <Text className="font-medium text-[10px] text-text-tertiary-color text-center">{event.city}  </Text>
+                    <Text className="text-[#1DB954] text-[8px] text-center">■ </Text>
+                    <Text className="font-medium text-[12px] text-text-tertiary-color text-center"> {event.date}</Text>
                 </View>
 
                 {/* Loading State / Map Toggle */}
@@ -281,26 +293,18 @@ export default function ChooseSeat() {
                 {loading ? null : showMap ? (
                     <View className="mt-6 items-center">
                         <Image
-                            source={require('../assets/seatmap.png')}
+                            source={{ uri: getSeatingMapImage(event) }}
                             className="w-[340] h-[300] rounded-lg"
                             resizeMode="contain"
                         />
                         <View className="flex-row justify-between px-3 mt-6 w-[340]">
-                            <View>
-                                <Text className="text-[#0E7733] text-[14px]">■ <Text className="font-medium text-[12px] color-text-primary-color">Tier 1</Text></Text>
-                                <Text className="font-medium text-text-secondary-color text-[10px]">100-Level Sections</Text>
-                                <Text className="font-medium text-[#0E7733] text-[10px]">VIP Ticket</Text>
-                            </View>
-                            <View>
-                                <Text className="text-[#1DB954] text-[14px]">■ <Text className="font-medium text-[12px] color-text-primary-color">Tier 2</Text></Text>
-                                <Text className="font-medium text-text-secondary-color text-[10px]">200-Level Sections</Text>
-                                <Text className="font-medium text-[#1DB954] text-[10px]">Premium Ticket</Text>
-                            </View>
-                            <View>
-                                <Text className="text-[#4ADE80] text-[14px]">■ <Text className="font-medium text-[12px] color-text-primary-color">Tier 3</Text></Text>
-                                <Text className="font-medium text-text-secondary-color text-[10px]">300-Level Sections</Text>
-                                <Text className="font-medium text-[#4ADE80] text-[10px]">Standard Ticket</Text>
-                            </View>
+                            {getTicketTypes(event).map((ticket) => (
+                                <View key={ticket.id}>
+                                    <Text style={{ color: ticket.color, fontSize: 14 }}>■ <Text className="font-medium text-[12px] color-text-primary-color">{ticket.name}</Text></Text>
+                                    <Text className="font-medium text-text-secondary-color text-[10px]">{ticket.section}</Text>
+                                    <Text style={{ color: ticket.color, fontSize: 10, fontWeight: '500' }}>{ticket.type}</Text>
+                                </View>
+                            ))}
                         </View>
                     </View>
                 ) : (
