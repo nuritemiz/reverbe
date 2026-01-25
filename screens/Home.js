@@ -189,7 +189,6 @@ export default function Home() {
 
         <View className="flex-row items-center mt-8 justify-between px-3">
           <Text className="text-text-primary-color font-semibold text-[20px]">Featured</Text>
-          <Text className="text-secondary-color font-medium text-[12px]">See all</Text>
         </View>
 
         <View>
@@ -267,7 +266,6 @@ export default function Home() {
 
         <View className="flex-row items-center mt-8 justify-between px-3">
           <Text className="text-text-primary-color font-semibold text-[18px]">Popular Events</Text>
-          <Text className="text-secondary-color font-medium text-[12px]">See all</Text>
         </View>
 
         {!loading ? (
@@ -319,7 +317,7 @@ export default function Home() {
 
         <View className="flex-row items-center mt-8 justify-between px-3">
           <Text className="text-text-primary-color font-medium text-[17px]">Categories</Text>
-          <Text className="text-secondary-color font-medium text-[12px]">See all</Text>
+          <Text onPress={() => navigation.navigate('Search')} className="text-secondary-color font-medium text-[12px]">See all</Text>
         </View>
 
         {!loading ? (

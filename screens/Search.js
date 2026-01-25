@@ -37,6 +37,7 @@ export default function Search({ route }) {
     const { data, error } = await supabase
       .from('events')
       .select('*')
+      .neq('title', 'Milano Cortina 2026 (Winter Olympic Games)')
 
     if (error) {
       console.error('Supabase Hatası:', error.message)
@@ -88,15 +89,15 @@ export default function Search({ route }) {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 12 }} className="mt-4 min-h-[50] max-h-[50]">
-        {['All', 'Music', 'Cinema', 'Sports', 'Theater', 'Festival'].map((cat) => (
+        {['All', 'Trends', 'Music', 'Cinema', 'Sports', 'Theater', 'Festival'].map((cat) => (
           <TouchableOpacity key={cat} onPress={() => setSelectedCategory(cat)}>
             <View className={`h-[40] px-4 rounded-md items-center justify-center flex-row gap-2 ${selectedCategory === cat ? 'bg-secondary-color' : 'bg-tertiary-color'}`}>
               <MaterialCommunityIcons
-                name={cat === 'All' ? 'view-grid' : cat === 'Music' ? 'music' : cat === 'Cinema' ? 'movie-roll' : cat === 'Sports' ? 'trophy' : cat === 'Theater' ? 'drama-masks' : 'tent'}
+                name={cat === 'All' ? 'view-grid' : cat === 'Trends' ? 'trending-up' : cat === 'Music' ? 'music' : cat === 'Cinema' ? 'movie-roll' : cat === 'Sports' ? 'trophy' : cat === 'Theater' ? 'drama-masks' : 'tent'}
                 size={20}
-                color={selectedCategory === cat ? '#000' : '#1DB954'}
+                color={selectedCategory === cat ? '#FFFFFF' : '#1DB954'}
               />
-              <Text className={`font-medium text-[14px] ${selectedCategory === cat ? 'text-black' : 'text-text-primary-color'}`}>{cat}</Text>
+              <Text className={`font-medium text-[14px] ${selectedCategory === cat ? 'text-white' : 'text-text-primary-color'}`}>{cat}</Text>
             </View>
           </TouchableOpacity>
         ))}

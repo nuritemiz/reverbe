@@ -41,22 +41,42 @@ export default function Details() {
     }
 
     const getEventIcon = (category) => {
-        switch (category) {
-            case 'Trends':
-            case 'Music':
-            case 'Concert':
-                return 'music-note'
-            case 'Sports':
-            case 'Basketball':
-            case 'Football':
-                return 'trophy'
-            case 'Theater':
-            case 'Comedy':
-                return 'drama-masks'
-            default:
-                return 'ticket'
-        }
+        if (!category) return 'ticket'
+
+        const cat = category.toLowerCase()
+        if (cat.includes('trends') || cat.includes('music') || cat.includes('concert') || cat.includes('festival')) return 'music-note'
+        if (cat.includes('sports') || cat.includes('basketball') || cat.includes('football')) return 'trophy'
+        if (cat.includes('theater') || cat.includes('comedy')) return 'drama-masks'
+        return 'ticket'
     }
+
+    const getSeatingMapImage = () => {
+        let filename = 'cinema.png' // Default fallback
+
+        if (!event || !event.category) return supabase.storage.from('seating-plans').getPublicUrl(filename).data.publicUrl
+
+        const category = event.category.toLowerCase()
+        const title = event.title ? event.title.toLowerCase() : ''
+
+        if (title.includes('gregory porter')) {
+            filename = 'jazz.png'
+        } else if (title.includes('knicks') || title.includes('lakers')) {
+            filename = 'nyknicks.png' // Specific match first
+        } else if (title.includes('ufc') || category.includes('ufc')) {
+            filename = 'UFC.png'
+        } else if (category.includes('festival') || category.includes('trends') || category.includes('music') || category.includes('concert')) {
+            filename = 'festival,trends,music.png'
+        } else if (category.includes('theater') || category.includes('comedy')) {
+            filename = 'theater.png'
+        } else if (category.includes('cinema')) {
+            filename = 'cinema.png'
+        }
+
+        const { data } = supabase.storage.from('seating-plans').getPublicUrl(filename)
+
+        return data.publicUrl
+    }
+
 
     const handleBuyTickets = async () => {
         const { data: { user } } = await supabase.auth.getUser()
@@ -70,7 +90,7 @@ export default function Details() {
     return (
         <SafeAreaView className="bg-primary-color flex-1">
             <ScrollView>
-                {/* ... (Header and Image remain same) */}
+
                 <View className="flex-row justify-between items-center mt-10 px-3">
                     <MaterialCommunityIcons name="chevron-left" size={30} color="#6E6E73" onPress={() => navigation.goBack()} />
                     <Text className="self-center font-semibold text-[20px] color-text-primary-color">Event Details</Text>
@@ -239,7 +259,7 @@ export default function Details() {
                 <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.90)', justifyContent: 'center', alignItems: 'center' }}>
                     <View className="rounded-xl p-4 w-[340]">
                         <Image
-                            source={require('../assets/seatmap.png')}
+                            source={{ uri: getSeatingMapImage() }}
                             className="w-full h-[340] rounded-lg"
                             resizeMode="contain"
                         />
