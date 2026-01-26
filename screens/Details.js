@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, Modal } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, Modal, Share } from 'react-native'
 import MapView, { Marker } from 'react-native-maps'
 import React, { useState, useEffect } from 'react'
 import { useNavigation, useRoute } from '@react-navigation/native'
@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase'
 import Skeleton from '../components/Skeleton'
 
 import { getEventIcon, getSeatingMapImage, getTicketTypes } from '../utils/seatUtils'
+import { getGalleryImages } from '../assets/galleryData'
 
 export default function Details() {
     const navigation = useNavigation()
@@ -19,9 +20,13 @@ export default function Details() {
     const [rulesExpanded, setRulesExpanded] = useState(false)
     const [selectedTicket, setSelectedTicket] = useState(null)
     const [seatingModalVisible, setSeatingModalVisible] = useState(false)
+    const [galleryModalVisible, setGalleryModalVisible] = useState(false)
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0)
     const [standardPrice, setStandardPrice] = useState(null)
     const [premiumPrice, setPremiumPrice] = useState(null)
     const [loading, setLoading] = useState(true)
+
+    const galleryImages = getGalleryImages(event.title)
 
     useEffect(() => {
         fetchEventPrices()
@@ -51,6 +56,47 @@ export default function Details() {
         }
     }
 
+    const handleShare = async () => {
+        try {
+            const result = await Share.share({
+                message: `🎫 Check out this event!\n\n${event.title}\n📅 ${event.date}\n📍 ${event.location}, ${event.city}\n\nGet your tickets now on Reverbe!`,
+                title: event.title
+            })
+
+            if (result.action === Share.sharedAction) {
+                if (result.activityType) {
+
+                    console.log('Shared with activity type:', result.activityType)
+                } else {
+
+                    console.log('Event shared successfully')
+                }
+            } else if (result.action === Share.dismissedAction) {
+
+                console.log('Share dismissed')
+            }
+        } catch (error) {
+            console.error('Error sharing event:', error)
+        }
+    }
+
+    const handleNextImage = () => {
+        if (selectedImageIndex < galleryImages.length - 1) {
+            setSelectedImageIndex(selectedImageIndex + 1)
+        }
+    }
+
+    const handlePrevImage = () => {
+        if (selectedImageIndex > 0) {
+            setSelectedImageIndex(selectedImageIndex - 1)
+        }
+    }
+
+    const openGallery = () => {
+        setSelectedImageIndex(0)
+        setGalleryModalVisible(true)
+    }
+
     return (
         <SafeAreaView className="bg-primary-color flex-1">
             <ScrollView>
@@ -58,7 +104,7 @@ export default function Details() {
                 <View className="flex-row justify-between items-center mt-10 px-3">
                     <MaterialCommunityIcons name="chevron-left" size={30} color="#6E6E73" onPress={() => navigation.goBack()} />
                     <Text className="self-center font-semibold text-[20px] color-text-primary-color">Event Details</Text>
-                    <MaterialCommunityIcons name="share" size={30} color="#6E6E73" />
+                    <MaterialCommunityIcons name="share" size={30} color="#6E6E73" onPress={handleShare} />
                 </View>
 
                 <Image
@@ -157,11 +203,13 @@ export default function Details() {
                     <View className="px-3 mt-8">
                         <View className="flex-row items-center justify-between" style={{ width: 160 }}>
                             <Text className="text-text-primary-color font-semibold text-[14px]">Gallery</Text>
-                            <Text className="text-secondary-color font-medium text-[12px]">See all</Text>
+                            <TouchableOpacity onPress={openGallery}>
+                                <Text className="text-secondary-color font-medium text-[12px]">See all</Text>
+                            </TouchableOpacity>
                         </View>
 
                         <Image
-                            source={{ uri: event.image_url }}
+                            source={galleryImages[0]}
                             className="w-[160] h-[100] rounded-xl mt-4"
                             resizeMode="cover"
                         />
@@ -221,6 +269,62 @@ export default function Details() {
                             className="mt-10 bg-secondary-color h-[44px] w-[120px] self-center rounded-md justify-center items-center"
                         >
                             <Text className="text-text-primary-color font-medium">Go Back</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Gallery Modal */}
+            <Modal
+                visible={galleryModalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setGalleryModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.95)', justifyContent: 'center', alignItems: 'center' }}>
+                    <TouchableOpacity
+                        className="absolute top-12 right-6 z-10"
+                        onPress={() => setGalleryModalVisible(false)}
+                    >
+                        <MaterialCommunityIcons name="close" size={30} color="white" />
+                    </TouchableOpacity>
+
+                    <View className="flex-row items-center justify-center w-full h-full">
+                        <TouchableOpacity
+                            onPress={handlePrevImage}
+                            disabled={selectedImageIndex === 0}
+                            style={{
+                                opacity: selectedImageIndex === 0 ? 0.1 : 0.5,
+                                position: 'absolute',
+                                left: 20,
+                                zIndex: 10
+                            }}
+                        >
+                            <MaterialCommunityIcons name="chevron-left" size={50} color="white" />
+                        </TouchableOpacity>
+
+                        <View className="items-center">
+                            <Image
+                                source={galleryImages[selectedImageIndex]}
+                                className="w-[300] h-[200] rounded-lg"
+                                resizeMode="cover"
+                            />
+                            <Text className="text-white text-center mt-4 font-medium">
+                                {selectedImageIndex + 1} / {galleryImages.length}
+                            </Text>
+                        </View>
+
+                        <TouchableOpacity
+                            onPress={handleNextImage}
+                            disabled={selectedImageIndex === galleryImages.length - 1}
+                            style={{
+                                opacity: selectedImageIndex === galleryImages.length - 1 ? 0.1 : 0.5,
+                                position: 'absolute',
+                                right: 20,
+                                zIndex: 10
+                            }}
+                        >
+                            <MaterialCommunityIcons name="chevron-right" size={50} color="white" />
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -61,9 +61,9 @@ export default function Cart() {
                     .single()
 
                 return {
-                    ...r, // reservation info
-                    price: seatData?.price || 120,
-                    section: seatData?.section || 'Section',
+                    ...r, // reservation info (includes price and section from reservation)
+                    price: r.price || seatData?.price || 120,
+                    section: r.section || seatData?.section || 'Section',
                     tier_name: seatData?.tier_name || 'Standard Ticket'
                 }
             })

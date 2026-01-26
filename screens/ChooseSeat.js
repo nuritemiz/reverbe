@@ -5,21 +5,21 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import Skeleton from '../components/Skeleton'
-import { getSeatingMapImage, getTicketTypes } from '../utils/seatUtils'
+import { getSeatingMapImage, getTicketTypes, getSeatingLayout } from '../utils/seatUtils'
 
 export default function ChooseSeat() {
     const navigation = useNavigation()
     const route = useRoute()
-    const { event } = route.params
+    const { event, selectedTier } = route.params
 
     const [showMap, setShowMap] = useState(false)
     const [seats, setSeats] = useState([])
     const [selectedSeats, setSelectedSeats] = useState([])
     const [loading, setLoading] = useState(true)
 
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-    const seatNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    const pricePerSeat = 120.00
+    const layout = getSeatingLayout(event)
+    const rows = layout.rows
+    const seatNumbers = layout.seatNumbers
 
     useEffect(() => {
         fetchSeats()
@@ -35,12 +35,13 @@ export default function ChooseSeat() {
                 .from('cart_reservations')
                 .select('*')
                 .eq('user_id', user.id)
+                .eq('event_id', event.id) // Only check for THIS event
                 .gt('expires_at', new Date().toISOString())
 
             if (error) throw error
 
             if (reservations && reservations.length > 0) {
-                // User has active reservations, navigate to Cart
+                // User has active reservations for THIS event, navigate to Cart
                 navigation.navigate('Cart', {
                     fromReservationCheck: true,
                     event
@@ -81,19 +82,24 @@ export default function ChooseSeat() {
         const newSeats = []
         const totalRows = rows.length // 8
 
-        // Simple distribution logic
-        // If 3 tiers: A-B (2), C-E (3), F-H (3)
-        // If 2 tiers: A-C (3), D-H (5)
+        // Dynamic tier distribution based on percentage of total rows
+        // Front 25% = Tier 1, Middle 40% = Tier 2, Back 35% = Tier 3
 
         rows.forEach((row, rowIndex) => {
             let tier
             if (tiers.length === 3) {
-                if (rowIndex < 2) tier = tiers[0] // VIP
-                else if (rowIndex < 5) tier = tiers[1] // General
+                const tier1End = Math.floor(totalRows * 0.25)
+                const tier2End = Math.floor(totalRows * 0.65)
+
+                if (rowIndex < tier1End) tier = tiers[0] // VIP
+                else if (rowIndex < tier2End) tier = tiers[1] // General
                 else tier = tiers[2] // Standard
-            } else {
-                if (rowIndex < 3) tier = tiers[0] // Premium/VIP
+            } else if (tiers.length === 2) {
+                const tier1End = Math.floor(totalRows * 0.4)
+                if (rowIndex < tier1End) tier = tiers[0] // Premium/VIP
                 else tier = tiers[1] // Standard
+            } else {
+                tier = tiers[0] // Single tier
             }
 
             seatNumbers.forEach(num => {
@@ -144,11 +150,12 @@ export default function ChooseSeat() {
                 s => !(s.row_letter === row && s.seat_number === seatNum)
             ))
         } else {
+            // Use selected tier's price and section instead of seat's stored values
             setSelectedSeats(prev => [...prev, {
                 row_letter: row,
                 seat_number: seatNum,
-                section: seat.section,
-                price: seat.price
+                section: selectedTier ? selectedTier.section : seat.section,
+                price: selectedTier ? selectedTier.numericPrice : seat.price
             }])
         }
     }
@@ -204,6 +211,8 @@ export default function ChooseSeat() {
                         event_id: event.id,
                         row_letter: seat.row_letter,
                         seat_number: seat.seat_number,
+                        price: seat.price,
+                        section: seat.section,
                         expires_at: expiresAt.toISOString()
                     }, {
                         onConflict: 'user_id,seat_id,event_id'
@@ -328,38 +337,51 @@ export default function ChooseSeat() {
                 ) : (
                     <>
 
-                        <View className="mt-6 px-3 items-center">
-                            {rows.map((row) => (
-                                <View key={row} className="flex-row items-center mb-2">
-                                    <Text className="text-text-tertiary-color font-medium w-[20px] mr-2">{row}</Text>
-                                    <View className="flex-row gap-1">
-                                        {seatNumbers.map((seatNum) => {
-                                            const status = getSeatStatus(row, seatNum)
-                                            return (
-                                                <TouchableOpacity
-                                                    key={`${row}${seatNum}`}
-                                                    onPress={() => handleSeatPress(row, seatNum)}
-                                                    disabled={status === 'sold' || status === 'reserved'}
-                                                >
-                                                    <View
-                                                        style={{
-                                                            width: 28,
-                                                            height: 28,
-                                                            backgroundColor: getSeatColor(status),
-                                                            borderRadius: 2,
-                                                            justifyContent: 'center',
-                                                            alignItems: 'center'
-                                                        }}
-                                                    >
-                                                        <Text style={{ fontSize: 10, fontWeight: '500', color: status === 'available' ? '#1C1C1E' : '#FFFFFF' }}>{seatNum}</Text>
-                                                    </View>
-                                                </TouchableOpacity>
-                                            )
-                                        })}
-                                    </View>
-                                </View>
-                            ))}
-                        </View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ paddingHorizontal: 12 }}
+                            className="mt-6"
+                        >
+                            <View className="items-center">
+                                {rows.map((row) => {
+                                    // Dynamic seat size based on number of seats
+                                    const seatSize = seatNumbers.length <= 10 ? 28 : seatNumbers.length <= 12 ? 24 : 20
+                                    const fontSize = seatNumbers.length <= 10 ? 10 : seatNumbers.length <= 12 ? 9 : 8
+
+                                    return (
+                                        <View key={row} className="flex-row items-center mb-2">
+                                            <Text className="text-text-tertiary-color font-medium w-[20px] mr-2">{row}</Text>
+                                            <View className="flex-row gap-1">
+                                                {seatNumbers.map((seatNum) => {
+                                                    const status = getSeatStatus(row, seatNum)
+                                                    return (
+                                                        <TouchableOpacity
+                                                            key={`${row}${seatNum}`}
+                                                            onPress={() => handleSeatPress(row, seatNum)}
+                                                            disabled={status === 'sold' || status === 'reserved'}
+                                                        >
+                                                            <View
+                                                                style={{
+                                                                    width: seatSize,
+                                                                    height: seatSize,
+                                                                    backgroundColor: getSeatColor(status),
+                                                                    borderRadius: 2,
+                                                                    justifyContent: 'center',
+                                                                    alignItems: 'center'
+                                                                }}
+                                                            >
+                                                                <Text style={{ fontSize: fontSize, fontWeight: '500', color: status === 'available' ? '#1C1C1E' : '#FFFFFF' }}>{seatNum}</Text>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                    )
+                                                })}
+                                            </View>
+                                        </View>
+                                    )
+                                })}
+                            </View>
+                        </ScrollView>
 
                         <View className="flex-row justify-center gap-6 mt-4">
                             <View className="flex-row items-center gap-2">

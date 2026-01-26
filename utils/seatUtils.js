@@ -127,3 +127,48 @@ export const getTicketTypes = (event) => {
         { id: 2, name: 'Standard', section: 'General', type: 'Standard Ticket', price: `$${standardPrice.toFixed(2)}`, color: '#1DB954', numericPrice: standardPrice },
     ]
 }
+
+export const getSeatingLayout = (event) => {
+    if (!event) return { rows: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], seatNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }
+
+    const category = event.category ? event.category.toLowerCase() : ''
+    const title = event.title ? event.title.toLowerCase() : ''
+
+    // Cinema - Smaller, intimate layout (6 rows, 8 seats)
+    if (category.includes('cinema')) {
+        return {
+            rows: ['A', 'B', 'C', 'D', 'E', 'F'],
+            seatNumbers: [1, 2, 3, 4, 5, 6, 7, 8]
+        }
+    }
+
+    // Theatre - Classic theatre layout (10 rows, variable width)
+    if (category.includes('theater') || category.includes('comedy') || title.includes('hamilton') || title.includes('wicked')) {
+        return {
+            rows: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
+            seatNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        }
+    }
+
+    // Sports Arena - Wide layout (8 rows, 12 seats)
+    if (category.includes('sports') || title.includes('ufc') || title.includes('knicks') || title.includes('lakers')) {
+        return {
+            rows: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+            seatNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        }
+    }
+
+    // Concert/Festival - Large GA style (7 rows, 14 seats)
+    if (category.includes('concert') || category.includes('music') || category.includes('festival') || category.includes('jazz') || title.includes('weeknd') || title.includes('coachella') || title.includes('swift') || title.includes('coldplay')) {
+        return {
+            rows: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+            seatNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        }
+    }
+
+    // Default layout
+    return {
+        rows: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+        seatNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+}

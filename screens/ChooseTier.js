@@ -115,7 +115,14 @@ export default function ChooseTier() {
                 </View>
                 <View className="pb-10" />
 
-                <TouchableOpacity onPress={() => navigation.navigate('ChooseSeat', { event })}>
+                <TouchableOpacity onPress={() => {
+                    if (!selectedTier) {
+                        alert('Please select a tier first')
+                        return
+                    }
+                    const selectedTierData = tiers.find(t => t.id === selectedTier)
+                    navigation.navigate('ChooseSeat', { event, selectedTier: selectedTierData })
+                }}>
                     <View className="w-[340px] h-[44px] bg-secondary-color justify-center self-center items-center rounded-md mb-4">
                         <Text className="font-medium text-text-primary-color">Choose Seat</Text>
                     </View>
