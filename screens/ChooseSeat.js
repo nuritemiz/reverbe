@@ -312,18 +312,11 @@ export default function ChooseSeat() {
                                 return tiers.map((ticket, index) => {
                                     const isTwoItems = tiers.length === 2
                                     let widthClass = isTwoItems ? 'w-1/2' : 'w-1/3'
-                                    let alignClass = 'items-start'
-
-                                    if (isTwoItems) {
-                                        if (index === 1) alignClass = 'items-end'
-                                    } else {
-                                        if (index % 3 === 1) alignClass = 'items-center'
-                                        else if (index % 3 === 2) alignClass = 'items-end'
-                                    }
+                                    let alignClass = 'items-center'
 
                                     return (
                                         <View key={ticket.id} className={`${widthClass} ${alignClass} mb-4`}>
-                                            <View className="items-start">
+                                            <View className={alignClass}>
                                                 <Text style={{ color: ticket.color, fontSize: 14 }}>■ <Text className="font-medium text-[12px] color-text-primary-color">{ticket.name}</Text></Text>
                                                 <Text className="font-medium text-text-secondary-color text-[10px]">{ticket.section}</Text>
                                                 <Text style={{ color: ticket.color, fontSize: 10, fontWeight: '500' }}>{ticket.type}</Text>

@@ -52,18 +52,11 @@ export default function ChooseTier() {
                     {tiers.map((tier, index) => {
                         const isTwoItems = tiers.length === 2
                         let widthClass = isTwoItems ? 'w-1/2' : 'w-1/3'
-                        let alignClass = 'items-start'
-
-                        if (isTwoItems) {
-                            if (index === 1) alignClass = 'items-end'
-                        } else {
-                            if (index % 3 === 1) alignClass = 'items-center'
-                            else if (index % 3 === 2) alignClass = 'items-end'
-                        }
+                        let alignClass = 'items-center'
 
                         return (
                             <View key={tier.id} className={`${widthClass} ${alignClass} mb-4`}>
-                                <View className="items-start">
+                                <View className={alignClass}>
                                     <Text style={{ color: tier.color, fontSize: 16 }}>■ <Text className="font-medium text-[14px] color-text-primary-color">{tier.name}</Text>
                                     </Text>
                                     <Text className="font-medium text-text-secondary-color text-[10px]">{tier.section}</Text>

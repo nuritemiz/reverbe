@@ -25,7 +25,7 @@ export default function Tickets() {
                         <View key={index} className="bg-tertiary-color mx-4 mt-8 rounded-3xl px-5 py-6">
                             <View className="flex-row items-center justify-center">
                                 <MaterialCommunityIcons name={getEventIcon(event)} size={24} color="#1DB954" />
-                                <Text className="text-text-primary-color font-semibold text-[18px] ml-2">{event.title}</Text>
+                                <Text numberOfLines={1} className="text-text-primary-color font-semibold text-[16px] ml-2">{event.title}</Text>
                             </View>
 
                             <Text className="text-text-secondary-color text-[14px] text-center mt-3">{event.venue || 'Madison Square Garden, NY'}</Text>

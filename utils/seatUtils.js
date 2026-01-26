@@ -13,7 +13,7 @@ export const getEventIcon = (input) => {
             if (title.includes('hamilton') || title.includes('wicked')) category = 'theater'
             else if (title.includes('knicks') || title.includes('lakers') || title.includes('ufc')) category = 'sports'
             else if (title.includes('coachella')) category = 'festival'
-            else if (title.includes('concert') || title.includes('fest')) category = 'music'
+            else if (title.includes('concert') || title.includes('fest') || title.includes('music') || title.includes('coldplay') || title.includes('weeknd') || title.includes('swift') || title.includes('eras') || title.includes('bad bunny') || title.includes('drake')) category = 'music'
         }
     } else {
         category = String(input)

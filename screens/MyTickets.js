@@ -42,7 +42,8 @@ export default function MyTickets() {
                         title,
                         location,
                         date,
-                        image_url
+                        image_url,
+                        category
                     )
                 `)
                 .eq('user_id', user.id)
@@ -76,6 +77,7 @@ export default function MyTickets() {
                         venue: event?.location || 'Unknown Venue',
                         date: event?.date || 'Unknown Date',
                         image: event?.image_url || 'https://via.placeholder.com/100',
+                        category: event?.category || '',
                         tickets: []
                     }
                 }
@@ -190,7 +192,8 @@ export default function MyTickets() {
                                                     title: ticket.eventTitle,
                                                     venue: ticket.venue,
                                                     date: ticket.date,
-                                                    image_url: ticket.image
+                                                    image_url: ticket.image,
+                                                    category: ticket.category
                                                 }
                                             })}
                                             className="bg-secondary-color h-[36] rounded-md justify-center items-center mt-2"
@@ -236,7 +239,8 @@ export default function MyTickets() {
                                                     title: ticket.eventTitle,
                                                     venue: ticket.venue,
                                                     date: ticket.date,
-                                                    image_url: ticket.image
+                                                    image_url: ticket.image,
+                                                    category: ticket.category
                                                 }
                                             })}
                                             className="bg-secondary-color h-[36] rounded-md justify-center items-center mt-2"

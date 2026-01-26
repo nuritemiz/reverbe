@@ -50,8 +50,9 @@ export default function Cart() {
                 return
             }
 
-            // Fetch detailed seat info for each reservation
+            // Fetch detailed seat and event info for each reservation
             const seatsDetailsPromises = reservations.map(async r => {
+                // Fetch seat data
                 const { data: seatData } = await supabase
                     .from('seats')
                     .select('*')
@@ -60,11 +61,21 @@ export default function Cart() {
                     .eq('seat_number', r.seat_number)
                     .single()
 
+                // Fetch event data for this specific reservation
+                // Handle the 'event-1' mapping if necessary, similar to original code
+                const eventIdToFetch = r.event_id === 'event-1' ? 7 : r.event_id
+                const { data: eventInfo } = await supabase
+                    .from('events')
+                    .select('*')
+                    .eq('id', eventIdToFetch)
+                    .single()
+
                 return {
-                    ...r, // reservation info (includes price and section from reservation)
+                    ...r, // reservation info
                     price: r.price || seatData?.price || 120,
                     section: r.section || seatData?.section || 'Section',
-                    tier_name: seatData?.tier_name || 'Standard Ticket'
+                    tier_name: seatData?.tier_name || 'Standard Ticket',
+                    event: eventInfo // Store event info with the seat
                 }
             })
 
@@ -76,21 +87,6 @@ export default function Cart() {
                 const firstExpiry = new Date(reservations[0].expires_at)
                 setExpiresAt(firstExpiry)
                 calculateRemainingTime(firstExpiry)
-            }
-
-            // Fetch event data
-            const eventIdToFetch = reservations[0].event_id === 'event-1' ? 7 : reservations[0].event_id
-
-            const { data: eventInfo, error: eventError } = await supabase
-                .from('events')
-                .select('*')
-                .eq('id', eventIdToFetch)
-                .single()
-
-            if (eventError) {
-                console.error('Error fetching event:', eventError)
-            } else if (eventInfo) {
-                setEventData(eventInfo)
             }
 
         } catch (error) {
@@ -137,7 +133,7 @@ export default function Cart() {
                 await supabase
                     .from('seats')
                     .update({ status: 'available' })
-                    .eq('event_id', 'event-1')
+                    .eq('event_id', seat.event_id) // Use seat's event_id
                     .eq('row_letter', seat.row_letter)
                     .eq('seat_number', seat.seat_number)
             }
@@ -183,13 +179,19 @@ export default function Cart() {
                 await supabase
                     .from('seats')
                     .update({ status: 'available' })
-                    .eq('event_id', 'event-1')
+                    .eq('event_id', seat.event_id) // Use seat's event_id
                     .eq('row_letter', seat.row_letter)
                     .eq('seat_number', seat.seat_number)
             }
 
             alert('Reservation expired. Seats have been released.')
-            navigation.navigate('ChooseSeat', { event: eventData })
+            // Navigate back to the event of the first item, or just home if empty
+            if (cartSeats.length > 0 && cartSeats[0].event) {
+                navigation.navigate('ChooseSeat', { event: cartSeats[0].event })
+            } else {
+                navigation.navigate('Home')
+            }
+
         } catch (error) {
             console.error('Error releasing seats:', error)
         }
@@ -197,11 +199,11 @@ export default function Cart() {
 
     const confirmPurchase = async () => {
         try {
-            for (const seat of selectedSeats) {
+            for (const seat of cartSeats) {
                 await supabase
                     .from('seats')
                     .update({ status: 'sold' })
-                    .eq('event_id', 'event-1')
+                    .eq('event_id', seat.event_id)
                     .eq('row_letter', seat.row_letter)
                     .eq('seat_number', seat.seat_number)
             }
@@ -311,12 +313,12 @@ export default function Cart() {
                         {cartSeats.map((seat, index) => (
                             <View key={index} className="w-[340] h-[100] bg-tertiary-color self-center mt-4 flex-row items-center px-3 rounded-md">
                                 <Image
-                                    source={{ uri: eventData?.image_url }}
+                                    source={{ uri: seat.event?.image_url }}
                                     className="w-[80] h-[80] rounded-l"
                                     resizeMode="cover"
                                 />
                                 <View className="flex-1 ml-4">
-                                    <Text className="font-medium text-text-primary-color text-[14px]">{eventData?.title || 'Event'}</Text>
+                                    <Text className="font-medium text-text-primary-color text-[14px]">{seat.event?.title || 'Event'}</Text>
                                     <View className="flex-row items-center mt-1">
                                         <Text className="font-semibold text-text-primary-color text-[11px]">Seat {seat.seat_number}</Text>
                                         <Text className="text-text-tertiary-color text-[11px] ml-2">Line {seat.row_letter}</Text>

@@ -60,7 +60,7 @@ export default function Checkout() {
             for (const seat of cartSeats) {
                 const ticketData = {
                     user_id: user.id,
-                    event_id: event.id,
+                    event_id: seat.event?.id || seat.event_id, // Use seat specific event id
                     seat_number: seat.seat_number,
                     row_letter: seat.row_letter,
                     section: seat.section,
@@ -84,7 +84,7 @@ export default function Checkout() {
                 const { error: seatError } = await supabase
                     .from('seats')
                     .update({ status: 'sold' })
-                    .eq('event_id', event.id)
+                    .eq('event_id', seat.event?.id || seat.event_id) // Use seat specific event id
                     .eq('row_letter', seat.row_letter)
                     .eq('seat_number', seat.seat_number)
 
@@ -170,21 +170,31 @@ export default function Checkout() {
                     </View>
                 </View>
 
-                {event && (
-                    <View className="w-[340] h-[100] bg-tertiary-color self-center mt-6 flex-row items-center px-3 rounded-md">
+                {Object.values(cartSeats.reduce((acc, seat) => {
+                    const eventId = seat.event?.id || 'unknown';
+                    if (!acc[eventId]) {
+                        acc[eventId] = {
+                            event: seat.event,
+                            seats: []
+                        };
+                    }
+                    acc[eventId].seats.push(seat);
+                    return acc;
+                }, {})).map((group, index) => (
+                    <View key={index} className="w-[340] h-[100] bg-tertiary-color self-center mt-6 flex-row items-center px-3 rounded-md">
                         <Image
-                            source={{ uri: event.image_url }}
+                            source={{ uri: group.event?.image_url }}
                             className="w-[80] h-[80] rounded-l"
                             resizeMode="cover"
                         />
                         <View className="flex-1 ml-4">
-                            <Text className="font-medium text-text-primary-color text-[14px]">{event.title}</Text>
-                            <Text className="text-text-secondary-color text-[11px] mt-1">{event.venue || 'Madison Square Garden, NY'}</Text>
-                            <Text className="text-text-tertiary-color text-[11px] mt-1">{event.date || 'DEC 05 19:30'}</Text>
+                            <Text className="font-medium text-text-primary-color text-[14px]">{group.event?.title || 'Unknown Event'}</Text>
+                            <Text className="text-text-secondary-color text-[11px] mt-1">{group.event?.venue || 'Venue'}</Text>
+                            <Text className="text-text-tertiary-color text-[11px] mt-1">{group.event?.date || 'Date'}</Text>
                         </View>
-                        <Text className="text-text-secondary-color font-medium text-[12px]">{cartSeats.length} Ticket</Text>
+                        <Text className="text-text-secondary-color font-medium text-[12px]">{group.seats.length} Ticket{group.seats.length > 1 ? 's' : ''}</Text>
                     </View>
-                )}
+                ))}
 
                 <View className="flex-row justify-between items-center px-3 mt-8">
                     <Text className="text-text-primary-color font-medium text-[18px]">Select Payment Method</Text>
