@@ -22,8 +22,8 @@ export default function Details() {
     const [seatingModalVisible, setSeatingModalVisible] = useState(false)
     const [galleryModalVisible, setGalleryModalVisible] = useState(false)
     const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-    const [standardPrice, setStandardPrice] = useState(null)
-    const [premiumPrice, setPremiumPrice] = useState(null)
+    const [standardPrice, setStandardPrice] = useState(event.standard_price || null)
+    const [premiumPrice, setPremiumPrice] = useState(event.premium_price || null)
     const [loading, setLoading] = useState(true)
 
     const galleryImages = getGalleryImages(event.title)
@@ -127,7 +127,7 @@ export default function Details() {
                     <Text className="font-medium text-[12px] text-text-tertiary-color" style={{ flexShrink: 1 }}> {event.date}</Text>
                 </View>
 
-                {/* Description Section with Skeleton */}
+                {/* Description Section */}
                 <TouchableOpacity
                     onPress={() => setAboutExpanded(!aboutExpanded)}
                     className="flex-row justify-between items-center px-3 mt-6"
@@ -140,22 +140,14 @@ export default function Details() {
                     />
                 </TouchableOpacity>
 
-                {loading ? (
-                    <View className="px-3 mt-2 gap-1">
-                        <Skeleton width="100%" height={12} />
-                        <Skeleton width="90%" height={12} />
-                        <Skeleton width="40%" height={12} />
-                    </View>
-                ) : (
-                    <Text
-                        className="font-sans text-[12px] px-3 text-text-tertiary-color mt-1"
-                        numberOfLines={aboutExpanded ? undefined : 2}
-                    >
-                        {event.description}
-                    </Text>
-                )}
+                <Text
+                    className="font-sans text-[12px] px-3 text-text-tertiary-color mt-1"
+                    numberOfLines={aboutExpanded ? undefined : 2}
+                >
+                    {event.description}
+                </Text>
 
-                {/* ... (Rules section remains same) */}
+                {/* Rules Section */}
                 <TouchableOpacity
                     onPress={() => setRulesExpanded(!rulesExpanded)}
                     className="flex-row justify-between items-center px-3 mt-6"
@@ -179,14 +171,14 @@ export default function Details() {
                 </View>
 
                 {/* Ticket Options with Skeleton */}
-                {loading ? (
+                {loading && !standardPrice ? (
                     <View className="mt-6 gap-6 self-center">
                         <Skeleton width={340} height={40} borderRadius={6} />
                         <Skeleton width={340} height={40} borderRadius={6} />
                     </View>
                 ) : (
                     <>
-                        {getTicketTypes(event).slice(0, 2).map((ticket) => (
+                        {getTicketTypes({ ...event, standard_price: standardPrice, premium_price: premiumPrice }).slice(0, 2).map((ticket) => (
                             <TouchableOpacity
                                 key={ticket.id}
                                 onPress={() => setSelectedTicket(ticket.id)}

@@ -29,9 +29,17 @@ import ForgotPassword from './screens/ForgotPassword';
 import ResetPassword from './screens/ResetPassword';
 import NotificationsScreen from './screens/Notifications';
 import EditProfile from './screens/EditProfile';
+import Settings from './screens/Settings';
+
+import PaymentMethods from './screens/PaymentMethods';
+
+import AddNewCard from './screens/AddNewCard';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+
+
 
 function MainTabs({ navigation }) {
   const [hasCartItems, setHasCartItems] = useState(false);
@@ -225,6 +233,9 @@ export default function App() {
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="EditProfile" component={EditProfile} />
+        <Stack.Screen name="Settings" component={Settings} />
+        <Stack.Screen name="PaymentMethods" component={PaymentMethods} />
+        <Stack.Screen name="AddNewCard" component={AddNewCard} />
       </Stack.Navigator>
     </NavigationContainer>
   );

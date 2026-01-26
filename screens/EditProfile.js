@@ -174,44 +174,6 @@ export default function EditProfile() {
         }
     }
 
-    if (loading) {
-        return (
-            <SafeAreaView className="bg-primary-color flex-1">
-                <View className="flex-row justify-between items-center mt-10 px-3">
-                    <MaterialCommunityIcons name="chevron-left" size={30} color="#6E6E73" />
-                    <Text className="font-semibold text-[20px] color-text-primary-color">Edit Profile</Text>
-                    <View style={{ width: 30 }} />
-                </View>
-
-                <View className="items-center mt-8">
-                    <Skeleton width={80} height={80} borderRadius={40} />
-                    <View className="mt-3">
-                        <Skeleton width={100} height={14} />
-                    </View>
-                </View>
-
-                <View className="mt-8 px-4">
-                    <View className="mb-4 gap-2">
-                        <Skeleton width={60} height={12} />
-                        <Skeleton width="100%" height={48} borderRadius={6} />
-                    </View>
-                    <View className="mb-4 gap-2">
-                        <Skeleton width={40} height={12} />
-                        <Skeleton width="100%" height={48} borderRadius={6} />
-                    </View>
-                    <View className="mb-4 gap-2">
-                        <Skeleton width={90} height={12} />
-                        <Skeleton width="100%" height={48} borderRadius={6} />
-                    </View>
-                </View>
-
-                <View className="mx-4 mt-8">
-                    <Skeleton width="100%" height={48} borderRadius={6} />
-                </View>
-            </SafeAreaView>
-        )
-    }
-
     return (
         <SafeAreaView className="bg-primary-color flex-1">
             <ScrollView>
@@ -227,82 +189,113 @@ export default function EditProfile() {
                     <View style={{ width: 30 }} />
                 </View>
 
-
-                <View className="items-center mt-8">
-                    <View className="w-[80] h-[80] bg-tertiary-color rounded-full items-center justify-center overflow-hidden">
-                        {uploadingImage ? (
-                            <ActivityIndicator size="small" color="#1DB954" />
-                        ) : avatarUrl ? (
-                            <Image
-                                key={avatarUrl}
-                                source={{ uri: avatarUrl }}
-                                style={{ width: 80, height: 80 }}
-                                resizeMode="cover"
-                                onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
-                                onLoad={() => console.log('Image loaded successfully:', avatarUrl)}
-                            />
-                        ) : (
-                            <MaterialCommunityIcons name="account" size={48} color="#6E6E73" />
-                        )}
-                    </View>
-                    <TouchableOpacity className="mt-3" onPress={pickImage} disabled={uploadingImage}>
-                        <Text className="text-secondary-color font-medium text-[14px]">
-                            {uploadingImage ? 'Loading...' : 'Change Photo'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                <View className="mt-8 px-4">
-
-                    <View className="mb-4">
-                        <Text className="text-text-secondary-color font-medium text-[12px] mb-2">Full Name</Text>
-                        <TextInput
-                            className="bg-tertiary-color text-text-primary-color px-4 py-3 rounded-md text-[14px]"
-                            value={fullName}
-                            onChangeText={setFullName}
-                            placeholder="Enter your full name"
-                            placeholderTextColor="#6E6E73"
-                        />
-                    </View>
-
-
-                    <View className="mb-4">
-                        <Text className="text-text-secondary-color font-medium text-[12px] mb-2">Email</Text>
-                        <View className="bg-tertiary-color px-4 py-3 rounded-md flex-row justify-between items-center">
-                            <Text className="text-text-tertiary-color text-[14px]">{email}</Text>
-                            <MaterialCommunityIcons name="lock" size={16} color="#6E6E73" />
+                {loading ? (
+                    <>
+                        <View className="items-center mt-8">
+                            <Skeleton width={80} height={80} borderRadius={40} />
+                            <View className="mt-3">
+                                <Skeleton width={100} height={14} />
+                            </View>
                         </View>
-                        <Text className="text-text-tertiary-color text-[10px] mt-1">Email cannot be changed</Text>
-                    </View>
+
+                        <View className="mt-8 px-4">
+                            <View className="mb-4 gap-2">
+                                <Skeleton width={60} height={12} />
+                                <Skeleton width="100%" height={48} borderRadius={6} />
+                            </View>
+                            <View className="mb-4 gap-2">
+                                <Skeleton width={40} height={12} />
+                                <Skeleton width="100%" height={48} borderRadius={6} />
+                            </View>
+                            <View className="mb-4 gap-2">
+                                <Skeleton width={90} height={12} />
+                                <Skeleton width="100%" height={48} borderRadius={6} />
+                            </View>
+                        </View>
+
+                        <View className="mx-4 mt-8">
+                            <Skeleton width="100%" height={48} borderRadius={6} />
+                        </View>
+                    </>
+                ) : (
+                    <>
+                        <View className="items-center mt-8">
+                            <View className="w-[80] h-[80] bg-tertiary-color rounded-full items-center justify-center overflow-hidden">
+                                {uploadingImage ? (
+                                    <ActivityIndicator size="small" color="#1DB954" />
+                                ) : avatarUrl ? (
+                                    <Image
+                                        key={avatarUrl}
+                                        source={{ uri: avatarUrl }}
+                                        style={{ width: 80, height: 80 }}
+                                        resizeMode="cover"
+                                        onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+                                        onLoad={() => console.log('Image loaded successfully:', avatarUrl)}
+                                    />
+                                ) : (
+                                    <MaterialCommunityIcons name="account" size={48} color="#6E6E73" />
+                                )}
+                            </View>
+                            <TouchableOpacity className="mt-3" onPress={pickImage} disabled={uploadingImage}>
+                                <Text className="text-secondary-color font-medium text-[14px]">
+                                    {uploadingImage ? 'Loading...' : 'Change Photo'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View className="mt-8 px-4">
+
+                            <View className="mb-4">
+                                <Text className="text-text-secondary-color font-medium text-[12px] mb-2">Full Name</Text>
+                                <TextInput
+                                    className="bg-tertiary-color text-text-primary-color px-4 py-3 rounded-md text-[14px]"
+                                    value={fullName}
+                                    onChangeText={setFullName}
+                                    placeholder="Enter your full name"
+                                    placeholderTextColor="#6E6E73"
+                                />
+                            </View>
 
 
-                    <View className="mb-4">
-                        <Text className="text-text-secondary-color font-medium text-[12px] mb-2">Phone Number</Text>
-                        <TextInput
-                            className="bg-tertiary-color text-text-primary-color px-4 py-3 rounded-md text-[14px]"
-                            value={phone}
-                            onChangeText={setPhone}
-                            placeholder="Enter your phone number"
-                            placeholderTextColor="#6E6E73"
-                            keyboardType="phone-pad"
-                        />
-                    </View>
-                </View>
+                            <View className="mb-4">
+                                <Text className="text-text-secondary-color font-medium text-[12px] mb-2">Email</Text>
+                                <View className="bg-tertiary-color px-4 py-3 rounded-md flex-row justify-between items-center">
+                                    <Text className="text-text-tertiary-color text-[14px]">{email}</Text>
+                                    <MaterialCommunityIcons name="lock" size={16} color="#6E6E73" />
+                                </View>
+                                <Text className="text-text-tertiary-color text-[10px] mt-1">Email cannot be changed</Text>
+                            </View>
 
 
-                <TouchableOpacity
-                    onPress={handleSave}
-                    disabled={saving}
-                    className="mx-4 mt-8"
-                >
-                    <View className={`h-[48] rounded-md justify-center items-center ${saving ? 'bg-tertiary-color' : 'bg-secondary-color'}`}>
-                        {saving ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
-                        ) : (
-                            <Text className="text-white font-semibold text-[16px]">Save Changes</Text>
-                        )}
-                    </View>
-                </TouchableOpacity>
+                            <View className="mb-4">
+                                <Text className="text-text-secondary-color font-medium text-[12px] mb-2">Phone Number</Text>
+                                <TextInput
+                                    className="bg-tertiary-color text-text-primary-color px-4 py-3 rounded-md text-[14px]"
+                                    value={phone}
+                                    onChangeText={setPhone}
+                                    placeholder="Enter your phone number"
+                                    placeholderTextColor="#6E6E73"
+                                    keyboardType="phone-pad"
+                                />
+                            </View>
+                        </View>
+
+
+                        <TouchableOpacity
+                            onPress={handleSave}
+                            disabled={saving}
+                            className="mx-4 mt-8"
+                        >
+                            <View className={`h-[48] rounded-md justify-center items-center ${saving ? 'bg-tertiary-color' : 'bg-secondary-color'}`}>
+                                {saving ? (
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                ) : (
+                                    <Text className="text-white font-semibold text-[16px]">Save Changes</Text>
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    </>
+                )}
 
                 <View className="pb-10" />
             </ScrollView>

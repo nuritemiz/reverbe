@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, ScrollView, Animated } from 'react-native'
+import { View, Text, TouchableOpacity, Image, ScrollView, Animated, RefreshControl } from 'react-native'
 import React, { useState, useRef, useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
@@ -19,35 +19,57 @@ export default function Home() {
   const [ufcEvent, setUfcEvent] = useState(null)
   const [userName, setUserName] = useState('')
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
 
+  // Fetch unread count on focus
   useFocusEffect(
     React.useCallback(() => {
-      const fetchUnread = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const count = await getUnreadCount(user.id)
-          setUnreadCount(count)
-        }
-      }
       fetchUnread()
     }, [])
   )
 
+  const fetchUnread = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const count = await getUnreadCount(user.id)
+      setUnreadCount(count)
+    }
+  }
+
   const dotAnimations = useRef([0, 1, 2].map(() => new Animated.Value(0))).current
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true)
-      await Promise.all([
-        fetchKnicksEvent(),
-        fetchHamiltonEvent(),
-        fetchFeaturedEvents()
-      ])
-      setLoading(false)
-    }
-    loadData()
+    loadAllData()
   }, [])
+
+  const loadAllData = async () => {
+    setLoading(true)
+    await fetchEvents()
+    setLoading(false)
+  }
+
+  const fetchEvents = async () => {
+    await Promise.all([
+      fetchKnicksEvent(),
+      fetchHamiltonEvent(),
+      fetchFeaturedEvents()
+    ])
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    // Refresh events
+    await fetchEvents()
+    // Refresh unread count
+    await fetchUnread()
+    // Refresh user profile if session exists
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      await fetchUserProfile(session.user.id)
+    }
+    setRefreshing(false)
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -66,6 +88,52 @@ export default function Home() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isManualScroll.current) {
+        setActiveIndex((prevIndex) => {
+          const nextIndex = (prevIndex + 1) % 3
+          scrollViewRef.current?.scrollTo({
+            x: nextIndex * 352,
+            animated: true
+          })
+          return nextIndex
+        })
+      }
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  const isManualScroll = useRef(false)
+
+  const handleScrollBeginDrag = () => {
+    isManualScroll.current = true
+  }
+
+  const handleScrollEndDrag = () => {
+    setTimeout(() => {
+      isManualScroll.current = false
+    }, 3000)
+  }
+
+  const handleMomentumScrollEnd = (event) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x
+    const index = Math.round(scrollPosition / 352)
+    if (index !== activeIndex) {
+      setActiveIndex(index)
+    }
+    isManualScroll.current = false
+  }
+
+  const handleScroll = (event) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x
+    const index = Math.round(scrollPosition / 352)
+    if (index !== activeIndex) {
+      setActiveIndex(index)
+    }
+  }
 
   const fetchUserProfile = async (userId) => {
     const { data: profile, error } = await supabase
@@ -129,52 +197,6 @@ export default function Home() {
     if (ufc) setUfcEvent(ufc)
   }
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isManualScroll.current) {
-        setActiveIndex((prevIndex) => {
-          const nextIndex = (prevIndex + 1) % 3
-          scrollViewRef.current?.scrollTo({
-            x: nextIndex * 352,
-            animated: true
-          })
-          return nextIndex
-        })
-      }
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  const isManualScroll = useRef(false)
-
-  const handleScrollBeginDrag = () => {
-    isManualScroll.current = true
-  }
-
-  const handleScrollEndDrag = () => {
-    setTimeout(() => {
-      isManualScroll.current = false
-    }, 3000)
-  }
-
-  const handleMomentumScrollEnd = (event) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x
-    const index = Math.round(scrollPosition / 352)
-    if (index !== activeIndex) {
-      setActiveIndex(index)
-    }
-    isManualScroll.current = false
-  }
-
-  const handleScroll = (event) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x
-    const index = Math.round(scrollPosition / 352)
-    if (index !== activeIndex) {
-      setActiveIndex(index)
-    }
-  }
-
   // Animate dots when activeIndex changes
   useEffect(() => {
     dotAnimations.forEach((anim, index) => {
@@ -188,7 +210,18 @@ export default function Home() {
 
   return (
     <SafeAreaView className="flex-1 bg-primary-color">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 12 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 12 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1DB954"
+            colors={['#1DB954']}
+          />
+        }
+      >
         <View className="mt-10 mx-3 flex-row justify-between items-center">
           <TouchableOpacity onPress={() => userName ? navigation.navigate('Profile') : navigation.navigate('Login')} className="flex-row items-center">
             <Text className="text-text-primary-color font-semibold text-[20px]">{userName ? `Hello, ${userName}` : 'Login / Sign Up'}</Text>

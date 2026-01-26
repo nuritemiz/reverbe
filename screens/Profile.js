@@ -40,15 +40,15 @@ export default function Profile() {
     );
 
     const menuItems = [
-        { id: 1, title: 'My tickets', icon: 'chevron-right', screen: 'MyTickets' },
-        { id: 2, title: 'Payment methods', icon: 'chevron-right', screen: null },
-        { id: 3, title: 'Order history', icon: 'chevron-right', screen: null },
-        { id: 4, title: 'Account details', icon: 'chevron-right', screen: null },
-        { id: 5, title: 'Notifications', icon: 'chevron-right', screen: 'Notifications' },
+        { id: 1, title: 'My tickets', leftIcon: 'ticket-confirmation-outline', icon: 'chevron-right', screen: 'MyTickets' },
+        { id: 2, title: 'Payment methods', leftIcon: 'credit-card-outline', icon: 'chevron-right', screen: 'PaymentMethods' },
+        { id: 3, title: 'Order history', leftIcon: 'history', icon: 'chevron-right', screen: null },
+
+        { id: 5, title: 'Notifications', leftIcon: 'bell-outline', icon: 'chevron-right', screen: 'Notifications' },
     ]
 
     const supportItems = [
-        { id: 1, title: 'Help & Support', icon: 'chevron-right', screen: null },
+        { id: 1, title: 'Help & Support', leftIcon: 'help-circle-outline', icon: 'chevron-right', screen: null },
     ]
 
     const handleMenuPress = (screen) => {
@@ -57,22 +57,7 @@ export default function Profile() {
         }
     }
 
-    const handleLogout = async () => {
-        try {
-            await supabase.auth.signOut();
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'Main' }],
-            });
-        } catch (error) {
-            console.error('Error signing out:', error);
-            // Navigate anyway even if sign out fails
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'Main' }],
-            });
-        }
-    }
+
 
     return (
         <SafeAreaView className="bg-primary-color flex-1">
@@ -89,6 +74,7 @@ export default function Profile() {
                         name="cog-outline"
                         size={24}
                         color="#6E6E73"
+                        onPress={() => navigation.navigate('Settings')}
                     />
                 </View>
 
@@ -137,7 +123,10 @@ export default function Profile() {
                             onPress={() => handleMenuPress(item.screen)}
                             className="bg-tertiary-color mx-3 mb-4 px-4 py-4 rounded-md flex-row justify-between items-center"
                         >
-                            <Text className="text-text-primary-color font-medium text-[14px]">{item.title}</Text>
+                            <View className="flex-row items-center gap-3">
+                                <MaterialCommunityIcons name={item.leftIcon} size={22} color="#1DB954" />
+                                <Text className="text-text-primary-color font-medium text-[14px]">{item.title}</Text>
+                            </View>
                             <MaterialCommunityIcons name={item.icon} size={20} color="#1DB954" />
                         </TouchableOpacity>
                     ))}
@@ -151,17 +140,14 @@ export default function Profile() {
                             onPress={() => handleMenuPress(item.screen)}
                             className="bg-tertiary-color mx-3 mb-2 px-4 py-4 rounded-md flex-row justify-between items-center"
                         >
-                            <Text className="text-text-primary-color font-medium text-[14px]">{item.title}</Text>
+                            <View className="flex-row items-center gap-3">
+                                <MaterialCommunityIcons name={item.leftIcon} size={22} color="#1DB954" />
+                                <Text className="text-text-primary-color font-medium text-[14px]">{item.title}</Text>
+                            </View>
                             <MaterialCommunityIcons name={item.icon} size={20} color="#1DB954" />
                         </TouchableOpacity>
                     ))}
                 </View>
-
-                <TouchableOpacity onPress={handleLogout} className="mx-3 mt-8 mb-6">
-                    <View className="bg-secondary-color h-[48] w-[120] self-center rounded-md justify-center items-center">
-                        <Text className="text-white font-semibold text-[16px]">Log out</Text>
-                    </View>
-                </TouchableOpacity>
 
                 <View className="pb-10" />
             </ScrollView>
