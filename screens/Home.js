@@ -12,10 +12,10 @@ import { fetchFeaturedEvents, fetchPopularEvents, fetchCategories } from '../ser
 
 const getCategoryIcon = (category) => {
   const map = {
-    'Music': 'music',
+    'Music': 'music-note',
     'Cinema': 'movie-roll',
-    'Festival': 'party-popper',
-    'Sports': 'basketball',
+    'Festival': 'tent',
+    'Sports': 'trophy',
     'Theater': 'drama-masks',
     'Trends': 'trending-up'
   }

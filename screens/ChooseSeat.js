@@ -306,20 +306,16 @@ export default function ChooseSeat() {
                             className="w-[340] h-[300] rounded-lg"
                             resizeMode="contain"
                         />
-                        <View className="flex-row w-[340px] px-3 mt-6 flex-wrap">
+                        <View className="flex-row w-full mt-6 flex-wrap gap-1 justify-center">
                             {(() => {
                                 const tiers = getTicketTypes(event)
                                 return tiers.map((ticket, index) => {
-                                    const isTwoItems = tiers.length === 2
-                                    let widthClass = isTwoItems ? 'w-1/2' : 'w-1/3'
-                                    let alignClass = 'items-center'
-
                                     return (
-                                        <View key={ticket.id} className={`${widthClass} ${alignClass} mb-4`}>
-                                            <View className={alignClass}>
-                                                <Text style={{ color: ticket.color, fontSize: 14 }}>■ <Text className="font-medium text-[12px] color-text-primary-color">{ticket.name}</Text></Text>
-                                                <Text className="font-medium text-text-secondary-color text-[10px]">{ticket.section}</Text>
-                                                <Text style={{ color: ticket.color, fontSize: 10, fontWeight: '500' }}>{ticket.type}</Text>
+                                        <View key={ticket.id} className="w-[32%] items-center mb-4">
+                                            <View className="items-start">
+                                                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: ticket.color, fontSize: 13, textAlign: 'left' }}>■ <Text className="font-medium text-[13px] color-text-primary-color">{ticket.name}</Text></Text>
+                                                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} className="font-medium text-text-secondary-color text-[10px] text-left">{ticket.section}</Text>
+                                                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: ticket.color, fontSize: 10, fontWeight: '500', textAlign: 'left' }}>{ticket.type}</Text>
                                             </View>
                                         </View>
                                     )

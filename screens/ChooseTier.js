@@ -48,19 +48,15 @@ export default function ChooseTier() {
                     resizeMode="contain"
                 />
 
-                <View className="flex-row w-[340px] self-center mt-6 flex-wrap">
+                <View className="flex-row  self-center  items-center mt-6  justify-center gap-1">
                     {tiers.map((tier, index) => {
-                        const isTwoItems = tiers.length === 2
-                        let widthClass = isTwoItems ? 'w-1/2' : 'w-1/3'
-                        let alignClass = 'items-center'
-
                         return (
-                            <View key={tier.id} className={`${widthClass} ${alignClass} mb-4`}>
-                                <View className={alignClass}>
-                                    <Text style={{ color: tier.color, fontSize: 16 }}>■ <Text className="font-medium text-[14px] color-text-primary-color">{tier.name}</Text>
+                            <View key={tier.id} className="w-[32%] items-center mb-4">
+                                <View className="items-start">
+                                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: tier.color, fontSize: 13, textAlign: 'left' }}>■ <Text className="font-medium text-[13px] color-text-primary-color">{tier.name}</Text>
                                     </Text>
-                                    <Text className="font-medium text-text-secondary-color text-[10px]">{tier.section}</Text>
-                                    <Text style={{ color: tier.color, fontSize: 12, fontWeight: '500' }}>{tier.type}</Text>
+                                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} className="font-medium text-text-secondary-color text-[10px] text-left">{tier.section}</Text>
+                                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: tier.color, fontSize: 10, fontWeight: '500', textAlign: 'left' }}>{tier.type}</Text>
                                 </View>
                             </View>
                         )

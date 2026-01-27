@@ -114,7 +114,7 @@ export default function Details() {
                 />
 
                 <View className="mt-4 px-3 flex-row gap-3" style={{ paddingRight: 12 }}>
-                    <MaterialCommunityIcons className="self-center" name={getEventIcon(event.category)} size={20} color="#1DB954" />
+                    <MaterialCommunityIcons className="self-center" name={getEventIcon(event)} size={20} color="#1DB954" />
                     <Text className="font-semibold text-[18px] color-text-primary-color" style={{ flex: 1, flexShrink: 1 }} numberOfLines={2}>
                         {event.title}
                     </Text>

@@ -22,11 +22,14 @@ export const getEventIcon = (input) => {
     const cat = category.toLowerCase()
 
     // Logic matching getTicketTypes categories
-    if (cat.includes('coachella') || cat.includes('festival')) return 'party-popper'
+    const lowerTitle = (typeof input === 'object' && input.title) ? input.title.toLowerCase() : ''
+    if (cat.includes('ufc') || lowerTitle.includes('ufc') || lowerTitle.includes('fight') || lowerTitle.includes('boxing') || lowerTitle.includes('jones') || lowerTitle.includes('miocic')) return 'boxing-glove'
+
+    if (cat.includes('coachella') || cat.includes('festival')) return 'tent'
     if (cat.includes('trends') || cat.includes('music') || cat.includes('concert')) return 'music-note'
     if (cat.includes('sports') || cat.includes('basketball') || cat.includes('football') || cat.includes('ufc')) return 'trophy'
     if (cat.includes('theater') || cat.includes('comedy') || cat.includes('arts')) return 'drama-masks'
-    if (cat.includes('cinema') || cat.includes('movie')) return 'movie'
+    if (cat.includes('cinema') || cat.includes('movie')) return 'movie-roll'
 
     return 'ticket'
 }
@@ -89,8 +92,12 @@ export const getTicketTypes = (event) => {
 
     // Sports (Knicks, UFC, etc)
     if (category.includes('sports') || title.includes('ufc') || title.includes('knicks') || title.includes('lakers')) {
+        let vipName = 'Floor VIP'
+        if (title.includes('ufc') || title.includes('fight') || title.includes('boxing')) vipName = 'Ringside'
+        else if (title.includes('knicks') || title.includes('lakers') || category.includes('basketball')) vipName = 'Courtside'
+
         return [
-            { id: 1, name: 'Ringside/Courtside', section: 'Floor', type: 'VIP Ticket', price: `$${vipPrice.toFixed(2)}`, color: '#0E7733', numericPrice: vipPrice },
+            { id: 1, name: vipName, section: 'Floor', type: 'VIP Ticket', price: `$${vipPrice.toFixed(2)}`, color: '#0E7733', numericPrice: vipPrice },
             { id: 2, name: 'Lower Tier', section: 'Section 101', type: 'General Ticket', price: `$${premiumPrice.toFixed(2)}`, color: '#1DB954', numericPrice: premiumPrice },
             { id: 3, name: 'Upper Tier', section: 'Section 301', type: 'Standard Ticket', price: `$${standardPrice.toFixed(2)}`, color: '#4ADE80', numericPrice: standardPrice },
         ]
@@ -117,7 +124,7 @@ export const getTicketTypes = (event) => {
     if (category.includes('concert') || category.includes('music') || category.includes('festival')) {
         return [
             { id: 1, name: 'VIP Area', section: 'Front Stage', type: 'VIP Ticket', price: `$${premiumPrice.toFixed(2)}`, color: '#0E7733', numericPrice: premiumPrice },
-            { id: 2, name: 'General Admission', section: 'Field', type: 'Standard Ticket', price: `$${standardPrice.toFixed(2)}`, color: '#1DB954', numericPrice: standardPrice },
+            { id: 2, name: 'GA Field', section: 'Field', type: 'Standard Ticket', price: `$${standardPrice.toFixed(2)}`, color: '#1DB954', numericPrice: standardPrice },
         ]
     }
 
