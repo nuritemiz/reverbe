@@ -1,14 +1,16 @@
 
-import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native'
 import React, { useState, useEffect, useCallback } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
+import { useAlert } from '../context/AlertContext'
 
 export default function PaymentMethods() {
     const navigation = useNavigation()
+    const { showAlert } = useAlert()
 
     const [savedCards, setSavedCards] = useState([])
     const [userId, setUserId] = useState(null)
@@ -43,11 +45,11 @@ export default function PaymentMethods() {
     const handleDeleteCard = (id) => {
         if (!userId) return
 
-        Alert.alert(
+        showAlert(
             "Remove Card",
             "Are you sure you want to remove this payment method?",
             [
-                { text: "Cancel", style: "cancel" },
+                { text: "Cancel", style: "default" },
                 {
                     text: "Remove",
                     style: "destructive",

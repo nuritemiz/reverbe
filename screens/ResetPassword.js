@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { useAlert } from '../context/AlertContext'
 
 export default function ResetPassword({ navigation }) {
+    const { showAlert } = useAlert()
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -14,17 +16,17 @@ export default function ResetPassword({ navigation }) {
 
     const handleResetPassword = async () => {
         if (!password || !confirmPassword) {
-            alert('Please fill in all fields')
+            showAlert('Required', 'Please fill in all fields')
             return
         }
 
         if (password.length < 6) {
-            alert('Password must be at least 6 characters long')
+            showAlert('Error', 'Password must be at least 6 characters long')
             return
         }
 
         if (password !== confirmPassword) {
-            alert('Passwords do not match')
+            showAlert('Error', 'Passwords do not match')
             return
         }
 
@@ -36,15 +38,15 @@ export default function ResetPassword({ navigation }) {
             })
 
             if (error) {
-                alert(error.message)
+                showAlert('Error', error.message)
                 setLoading(false)
                 return
             }
 
-            alert('Password reset successful! You can now sign in with your new password.')
+            showAlert('Success', 'Password reset successful! You can now sign in with your new password.')
             navigation.replace('SignIn')
         } catch (error) {
-            alert('An error occurred. Please try again.')
+            showAlert('Error', 'An error occurred. Please try again.')
         } finally {
             setLoading(false)
         }

@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator, Image } from 'react-native'
+import { View, Text, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Image } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
@@ -6,9 +6,11 @@ import { useNavigation } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
 import Skeleton from '../components/Skeleton'
+import { useAlert } from '../context/AlertContext'
 
 export default function EditProfile() {
     const navigation = useNavigation()
+    const { showAlert } = useAlert()
 
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -54,7 +56,7 @@ export default function EditProfile() {
 
     const handleSave = async () => {
         if (!fullName.trim()) {
-            Alert.alert('Error', 'Name field cannot be empty.')
+            showAlert('Error', 'Name field cannot be empty.')
             return
         }
 
@@ -94,7 +96,7 @@ export default function EditProfile() {
             navigation.goBack()
         } catch (error) {
             console.error('Error saving profile:', error)
-            Alert.alert('Error', 'An error occurred while updating profile.')
+            showAlert('Error', 'An error occurred while updating profile.')
         } finally {
             setSaving(false)
         }
@@ -105,7 +107,7 @@ export default function EditProfile() {
 
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
             if (status !== 'granted') {
-                Alert.alert('Permission Required', 'Gallery access permission is required.')
+                showAlert('Permission Required', 'Gallery access permission is required.')
                 return
             }
 
@@ -170,7 +172,7 @@ export default function EditProfile() {
         } catch (error) {
             console.error('Error picking image:', error)
             setUploadingImage(false)
-            Alert.alert('Error', 'An error occurred while selecting photo.')
+            showAlert('Error', 'An error occurred while selecting photo.')
         }
     }
 

@@ -1,14 +1,16 @@
 
-import { View, Text, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import { getUserPreferences, updateUserPreferences } from '../services/NotificationService'
+import { useAlert } from '../context/AlertContext'
 
 export default function Settings() {
     const navigation = useNavigation()
+    const { showAlert } = useAlert()
     const [notificationsEnabled, setNotificationsEnabled] = useState(true)
     const [loading, setLoading] = useState(false)
     const [user, setUser] = useState(null)
@@ -51,11 +53,11 @@ export default function Settings() {
     }
 
     const handleDeleteAccount = () => {
-        Alert.alert(
+        showAlert(
             "Delete Account",
             "Are you sure you want to delete your account? This action cannot be undone.",
             [
-                { text: "Cancel", style: "cancel" },
+                { text: "Cancel", style: "default" },
                 {
                     text: "Delete",
                     style: "destructive",
@@ -155,7 +157,7 @@ export default function Settings() {
                     <Text className="text-text-secondary-color font-medium text-[12px] px-3 mb-2">Privacy & Data</Text>
 
                     <TouchableOpacity
-                        onPress={() => alert('Privacy Policy coming soon')}
+                        onPress={() => showAlert('Info', 'Privacy Policy coming soon')}
                         className="bg-tertiary-color mx-3 mb-2 px-4 py-4 rounded-md flex-row justify-between items-center"
                     >
                         <View className="flex-row items-center gap-3">
@@ -166,7 +168,7 @@ export default function Settings() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={() => alert('Terms of Service coming soon')}
+                        onPress={() => showAlert('Info', 'Terms of Service coming soon')}
                         className="bg-tertiary-color mx-3 mb-2 px-4 py-4 rounded-md flex-row justify-between items-center"
                     >
                         <View className="flex-row items-center gap-3">

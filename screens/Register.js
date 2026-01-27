@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { useAlert } from '../context/AlertContext'
 
 export default function Register({ navigation }) {
+    const { showAlert } = useAlert()
     const [fullName, setFullName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -15,17 +17,17 @@ export default function Register({ navigation }) {
 
     const handleRegister = async () => {
         if (!fullName || !email || !password || !confirmPassword) {
-            alert('Please fill in all fields')
+            showAlert('Required', 'Please fill in all fields')
             return
         }
 
         if (password !== confirmPassword) {
-            alert('Passwords do not match')
+            showAlert('Error', 'Passwords do not match')
             return
         }
 
         if (password.length < 6) {
-            alert('Password must be at least 6 characters')
+            showAlert('Error', 'Password must be at least 6 characters')
             return
         }
 
@@ -42,7 +44,7 @@ export default function Register({ navigation }) {
         })
 
         if (error) {
-            alert(error.message)
+            showAlert('Error', error.message)
             setLoading(false)
             return
         }

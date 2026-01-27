@@ -3,12 +3,14 @@ import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useRoute } from '@react-navigation/native'
+import { useAlert } from '../context/AlertContext'
 
 import { getSeatingMapImage, getTicketTypes } from '../utils/seatUtils'
 
 export default function ChooseTier() {
     const navigation = useNavigation()
     const route = useRoute()
+    const { showAlert } = useAlert()
     const { event } = route.params
 
     const [isExpanded, setIsExpanded] = useState(false)
@@ -106,7 +108,7 @@ export default function ChooseTier() {
 
                 <TouchableOpacity onPress={() => {
                     if (!selectedTier) {
-                        alert('Please select a tier first')
+                        showAlert('Error', 'Please select a tier first')
                         return
                     }
                     const selectedTierData = tiers.find(t => t.id === selectedTier)

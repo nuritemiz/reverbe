@@ -1,14 +1,16 @@
 
-import { View, Text, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
+import { useAlert } from '../context/AlertContext'
 
 export default function AddNewCard() {
     const navigation = useNavigation()
+    const { showAlert } = useAlert()
 
     const [cardNumber, setCardNumber] = useState('')
     const [expiryDate, setExpiryDate] = useState('')
@@ -44,14 +46,14 @@ export default function AddNewCard() {
 
     const handleSaveCard = async () => {
         if (cardNumber.length < 15 || expiryDate.length < 5 || cvv.length < 3 || !cardHolderName) {
-            Alert.alert("Invalid Input", "Please fill in all details correctly.")
+            showAlert("Invalid Input", "Please fill in all details correctly.")
             return;
         }
 
         try {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) {
-                Alert.alert("Error", "User not found")
+                showAlert("Error", "User not found")
                 return
             }
 
@@ -72,13 +74,13 @@ export default function AddNewCard() {
 
             await AsyncStorage.setItem(key, JSON.stringify(updatedCards))
 
-            Alert.alert("Success", "Card saved successfully!", [
+            showAlert("Success", "Card saved successfully!", [
                 { text: "OK", onPress: () => navigation.goBack() }
             ])
 
         } catch (error) {
             console.error('Error saving card:', error)
-            Alert.alert("Error", "Failed to save card.")
+            showAlert("Error", "Failed to save card.")
         }
     }
 

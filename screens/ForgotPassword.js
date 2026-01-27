@@ -4,22 +4,24 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { useAlert } from '../context/AlertContext'
 
 export default function ForgotPassword({ navigation }) {
+    const { showAlert } = useAlert()
     const [email, setEmail] = useState('')
     const [loading, setLoading] = useState(false)
     const [emailSent, setEmailSent] = useState(false)
 
     const handleResetPassword = async () => {
         if (!email) {
-            alert('Please enter your email address')
+            showAlert('Required', 'Please enter your email address')
             return
         }
 
         // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(email)) {
-            alert('Please enter a valid email address')
+            showAlert('Invalid Email', 'Please enter a valid email address')
             return
         }
 
@@ -31,14 +33,14 @@ export default function ForgotPassword({ navigation }) {
             })
 
             if (error) {
-                alert(error.message)
+                showAlert('Error', error.message)
                 setLoading(false)
                 return
             }
 
             setEmailSent(true)
         } catch (error) {
-            alert('An error occurred. Please try again.')
+            showAlert('Error', 'An error occurred. Please try again.')
         } finally {
             setLoading(false)
         }

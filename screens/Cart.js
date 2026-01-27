@@ -5,10 +5,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import Skeleton from '../components/Skeleton'
+import { useAlert } from '../context/AlertContext'
 
 export default function Cart() {
     const navigation = useNavigation()
     const route = useRoute()
+    const { showAlert } = useAlert()
     const { fromReservationCheck = false, event = null } = route.params || {}
 
     const [cartSeats, setCartSeats] = useState([])
@@ -98,7 +100,7 @@ export default function Cart() {
         } catch (error) {
             console.error('Error loading cart:', error)
             if (error.message === 'Failed to fetch' || error.message?.includes('network')) {
-                alert('Cannot load cart. Please check your internet connection.')
+                showAlert('Error', 'Cannot load cart. Please check your internet connection.')
             }
         } finally {
             setLoading(false)
@@ -235,7 +237,7 @@ export default function Cart() {
                     .eq('seat_number', seat.seat_number)
             }
 
-            alert('Reservation expired. Seats have been released.')
+            showAlert('Expired', 'Reservation expired. Seats have been released.')
             // Navigate back to the event of the first item, or just home if empty
             if (cartSeats.length > 0 && cartSeats[0].event) {
                 navigation.navigate('ChooseSeat', { event: cartSeats[0].event })
@@ -258,11 +260,11 @@ export default function Cart() {
                     .eq('row_letter', seat.row_letter)
                     .eq('seat_number', seat.seat_number)
             }
-            alert('Purchase successful!')
+            showAlert('Success', 'Purchase successful!')
             navigation.navigate('Home')
         } catch (error) {
             // ...existing code...
-            alert('Error completing purchase. Please try again.')
+            showAlert('Error', 'Error completing purchase. Please try again.')
         }
     }
 

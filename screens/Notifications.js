@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
@@ -17,9 +17,11 @@ import {
 } from '../utils/notificationHelpers'
 
 import Skeleton from '../components/Skeleton'
+import { useAlert } from '../context/AlertContext'
 
 export default function Notifications() {
     const navigation = useNavigation()
+    const { showAlert } = useAlert()
     const [notifications, setNotifications] = useState([])
     const [refreshing, setRefreshing] = useState(false)
     const [loading, setLoading] = useState(true)
@@ -70,11 +72,11 @@ export default function Notifications() {
     }
 
     const handleDelete = async (notificationId) => {
-        Alert.alert(
+        showAlert(
             'Delete Notification',
             'Are you sure you want to delete this notification?',
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: 'Cancel', style: 'default' },
                 {
                     text: 'Delete',
                     style: 'destructive',

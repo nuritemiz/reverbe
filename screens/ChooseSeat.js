@@ -6,10 +6,12 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import Skeleton from '../components/Skeleton'
 import { getSeatingMapImage, getTicketTypes, getSeatingLayout } from '../utils/seatUtils'
+import { useAlert } from '../context/AlertContext'
 
 export default function ChooseSeat() {
     const navigation = useNavigation()
     const route = useRoute()
+    const { showAlert } = useAlert()
     const { event, selectedTier } = route.params
 
     const [showMap, setShowMap] = useState(false)
@@ -68,7 +70,7 @@ export default function ChooseSeat() {
             }
         } catch (error) {
             console.error('Error fetching seats:', error)
-            alert('Error loading seats')
+            showAlert('Error', 'Error loading seats')
         } finally {
             setLoading(false)
         }
@@ -121,7 +123,7 @@ export default function ChooseSeat() {
 
         if (error) {
             console.error('Error creating seats:', error)
-            alert('Could not initialize seats for this event.')
+            showAlert('Error', 'Could not initialize seats for this event.')
         } else {
             setSeats(data)
         }
@@ -162,14 +164,14 @@ export default function ChooseSeat() {
 
     const buyTickets = async () => {
         if (selectedSeats.length === 0) {
-            alert('Please select at least one seat')
+            showAlert('Alert', 'Please select at least one seat')
             return
         }
 
         try {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) {
-                alert('Please login to reserve seats')
+                showAlert('Required', 'Please login to reserve seats')
                 return
             }
 
@@ -188,7 +190,7 @@ export default function ChooseSeat() {
                 if (checkError) throw checkError
 
                 if (seatCheck.status !== 'available') {
-                    alert(`Seat ${seat.row_letter}${seat.seat_number} is no longer available.`)
+                    showAlert('Unavailable', `Seat ${seat.row_letter}${seat.seat_number} is no longer available.`)
                     await fetchSeats()
                     setSelectedSeats([])
                     return
@@ -236,7 +238,7 @@ export default function ChooseSeat() {
             })
         } catch (error) {
             console.error('Error reserving seats:', error)
-            alert('Error reserving seats. Please try again.')
+            showAlert('Error', 'Error reserving seats. Please try again.')
             await fetchSeats()
         }
     }

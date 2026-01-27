@@ -34,7 +34,7 @@ export async function registerForPushNotificationsAsync() {
         }
 
         if (finalStatus !== 'granted') {
-            alert('Failed to get push token for push notification!')
+            console.warn('Failed to get push token for push notification!')
             return
         }
 

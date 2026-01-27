@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { useAlert } from '../context/AlertContext'
 
 export default function SignIn({ navigation }) {
+    const { showAlert } = useAlert()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -13,7 +15,7 @@ export default function SignIn({ navigation }) {
 
     const handleSignIn = async () => {
         if (!email || !password) {
-            alert('Please fill in all fields')
+            showAlert('Required', 'Please fill in all fields')
             return
         }
 
@@ -25,7 +27,7 @@ export default function SignIn({ navigation }) {
         })
 
         if (error) {
-            alert(error.message)
+            showAlert('Error', error.message)
             setLoading(false)
             return
         }

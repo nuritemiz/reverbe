@@ -10,6 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, savePushToken } from './services/NotificationService';
+import { AlertProvider } from './context/AlertContext';
 import "./global.css"
 import Welcome from './screens/Welcome'
 import Home from './screens/Home'
@@ -203,42 +204,44 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer
-      linking={{
-        prefixes: ['reverbe://'],
-        config: {
-          screens: {
-            ResetPassword: 'reset-password',
+    <AlertProvider>
+      <NavigationContainer
+        linking={{
+          prefixes: ['reverbe://'],
+          config: {
+            screens: {
+              ResetPassword: 'reset-password',
+            },
           },
-        },
-      }}
-    >
-      <StatusBar style="auto" />
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Main" component={MainTabs} />
-        <Stack.Screen name="Welcome" component={Welcome} />
-        <Stack.Screen name="Register" component={Register} />
-        <Stack.Screen name="SignIn" component={SignIn} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-        <Stack.Screen name="ResetPassword" component={ResetPassword} />
-        <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name="Search" component={Search} />
-        <Stack.Screen name="Details" component={Details} />
-        <Stack.Screen name="ChooseTier" component={ChooseTier} />
-        <Stack.Screen name="ChooseSeat" component={ChooseSeat} />
-        <Stack.Screen name="Cart" component={Cart} />
-        <Stack.Screen name="Checkout" component={Checkout} />
-        <Stack.Screen name="PayoutSuccess" component={PayoutSuccess} />
-        <Stack.Screen name="TicketDetail" component={TicketDetail} />
-        <Stack.Screen name="MyTickets" component={MyTickets} />
-        <Stack.Screen name="Profile" component={Profile} />
-        <Stack.Screen name="Notifications" component={NotificationsScreen} />
-        <Stack.Screen name="EditProfile" component={EditProfile} />
-        <Stack.Screen name="Settings" component={Settings} />
-        <Stack.Screen name="PaymentMethods" component={PaymentMethods} />
-        <Stack.Screen name="AddNewCard" component={AddNewCard} />
-        <Stack.Screen name="OrderHistory" component={OrderHistory} />
-      </Stack.Navigator>
-    </NavigationContainer>
+        }}
+      >
+        <StatusBar style="auto" />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="Welcome" component={Welcome} />
+          <Stack.Screen name="Register" component={Register} />
+          <Stack.Screen name="SignIn" component={SignIn} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+          <Stack.Screen name="ResetPassword" component={ResetPassword} />
+          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen name="Search" component={Search} />
+          <Stack.Screen name="Details" component={Details} />
+          <Stack.Screen name="ChooseTier" component={ChooseTier} />
+          <Stack.Screen name="ChooseSeat" component={ChooseSeat} />
+          <Stack.Screen name="Cart" component={Cart} />
+          <Stack.Screen name="Checkout" component={Checkout} />
+          <Stack.Screen name="PayoutSuccess" component={PayoutSuccess} />
+          <Stack.Screen name="TicketDetail" component={TicketDetail} />
+          <Stack.Screen name="MyTickets" component={MyTickets} />
+          <Stack.Screen name="Profile" component={Profile} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
+          <Stack.Screen name="Settings" component={Settings} />
+          <Stack.Screen name="PaymentMethods" component={PaymentMethods} />
+          <Stack.Screen name="AddNewCard" component={AddNewCard} />
+          <Stack.Screen name="OrderHistory" component={OrderHistory} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </AlertProvider>
   );
 }

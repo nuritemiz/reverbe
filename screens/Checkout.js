@@ -5,11 +5,13 @@ import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons'
 import { useNavigation, useRoute, CommonActions } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import { scheduleEventReminder } from '../services/NotificationService'
+import { useAlert } from '../context/AlertContext'
 
 
 export default function Checkout() {
     const navigation = useNavigation()
     const route = useRoute()
+    const { showAlert } = useAlert()
     const { minutes: initialMinutes = 5, seconds: initialSeconds = 0, event, cartSeats = [], extras = 0, appliedCampaigns = [] } = route.params || {}
 
     const [minutes, setMinutes] = useState(initialMinutes)
@@ -51,7 +53,7 @@ export default function Checkout() {
             console.log('User error:', userError)
 
             if (userError || !user) {
-                alert('Please sign in to complete your purchase')
+                showAlert('Required', 'Please sign in to complete your purchase')
                 return
             }
 
@@ -124,20 +126,20 @@ export default function Checkout() {
 
             // Network error
             if (error.message === 'Failed to fetch' || error.message?.includes('network')) {
-                alert('Network error during payment. Please check your connection and try again. Your seats are still reserved.')
+                showAlert('Network Error', 'Network error during payment. Please check your connection and try again. Your seats are still reserved.')
             }
             // Authentication error
             else if (error.code === 'PGRST301' || error.message?.includes('JWT')) {
-                alert('Session expired. Please log in again.')
+                showAlert('Session Expired', 'Session expired. Please log in again.')
                 navigation.navigate('Welcome')
             }
             // Database error
             else if (error.code?.startsWith('23') || error.code?.startsWith('42')) {
-                alert('Database error. Please contact support if this persists.')
+                showAlert('Database Error', 'Database error. Please contact support if this persists.')
             }
             // Generic error
             else {
-                alert('Payment failed. Please try again. Your seats are still reserved.')
+                showAlert('Payment Failed', 'Payment failed. Please try again. Your seats are still reserved.')
             }
         }
     }
