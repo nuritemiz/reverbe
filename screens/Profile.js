@@ -42,7 +42,7 @@ export default function Profile() {
     const menuItems = [
         { id: 1, title: 'My tickets', leftIcon: 'ticket-confirmation-outline', icon: 'chevron-right', screen: 'MyTickets' },
         { id: 2, title: 'Payment methods', leftIcon: 'credit-card-outline', icon: 'chevron-right', screen: 'PaymentMethods' },
-        { id: 3, title: 'Order history', leftIcon: 'history', icon: 'chevron-right', screen: null },
+        { id: 3, title: 'Order history', leftIcon: 'history', icon: 'chevron-right', screen: 'OrderHistory' },
 
         { id: 5, title: 'Notifications', leftIcon: 'bell-outline', icon: 'chevron-right', screen: 'Notifications' },
     ]

@@ -18,10 +18,13 @@ export default function Cart() {
     const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
     const [loading, setLoading] = useState(true)
     const [expiresAt, setExpiresAt] = useState(null)
+    const [campaigns, setCampaigns] = useState([])
+    const [appliedCampaigns, setAppliedCampaigns] = useState([])
+    const [extras, setExtras] = useState(0)
 
     const serviceFee = 4.00
     const subtotal = cartSeats.reduce((sum, seat) => sum + (seat.price || 0), 0)
-    const totalAmount = subtotal + serviceFee
+    const totalAmount = subtotal + serviceFee + extras
 
     useEffect(() => {
         loadCartFromSupabase()
@@ -82,6 +85,9 @@ export default function Cart() {
             const seats = await Promise.all(seatsDetailsPromises)
             setCartSeats(seats)
 
+            // Load campaigns for the event categories in cart
+            await loadCampaigns(seats)
+
             // Calculate remaining time from first expiring reservation
             if (reservations.length > 0) {
                 const firstExpiry = new Date(reservations[0].expires_at)
@@ -97,6 +103,51 @@ export default function Cart() {
         } finally {
             setLoading(false)
         }
+    }
+
+    // Load campaigns based on cart items' event categories
+    const loadCampaigns = async (seats) => {
+        try {
+            // Get unique categories from cart items
+            const categories = [...new Set(seats.map(seat => seat.event?.category).filter(Boolean))]
+
+            if (categories.length === 0) {
+                setCampaigns([])
+                return
+            }
+
+            // Fetch campaigns for all categories in cart
+            const { data, error } = await supabase
+                .from('campaigns')
+                .select('*')
+                .in('category', categories)
+                .eq('active', true)
+
+            if (error) throw error
+            setCampaigns(data || [])
+        } catch (error) {
+            console.error('Error loading campaigns:', error)
+            setCampaigns([])
+        }
+    }
+
+    // Apply a campaign (add-on/promotion)
+    const applyCampaign = (campaign) => {
+        // Check if already applied
+        if (appliedCampaigns.find(c => c.id === campaign.id)) {
+            // Remove campaign
+            setAppliedCampaigns(appliedCampaigns.filter(c => c.id !== campaign.id))
+            setExtras(extras - parseFloat(campaign.price))
+        } else {
+            // Apply campaign
+            setAppliedCampaigns([...appliedCampaigns, campaign])
+            setExtras(extras + parseFloat(campaign.price))
+        }
+    }
+
+    // Check if a campaign is applied
+    const isCampaignApplied = (campaignId) => {
+        return appliedCampaigns.some(c => c.id === campaignId)
     }
 
     const calculateRemainingTime = (expiryTime) => {
@@ -275,29 +326,54 @@ export default function Cart() {
                                     </View>
                                 </View>
 
-                                <Text className="text-text-primary-color font-medium px-3 mt-6 text-[17px]">Campaigns</Text>
+                                <Text className="text-text-primary-color font-medium px-3 mt-6 text-[17px]">Promotions</Text>
 
-                                <View className="w-[340] h-[80] border-tertiary-color border-2 self-center mt-4 flex-row items-center px-3 rounded-md">
-                                    <MaterialCommunityIcons name="food" size={30} color="#1DB954" />
-                                    <View className="flex-1 ml-3">
-                                        <Text className="font-medium text-text-primary-color text-[14px]">Game Day Special!</Text>
-                                        <Text className="font-regular text-text-secondary-color text-[11px]">Add 2 Drinks + 1 Food item now for
-                                            <Text className="text-text-tertiary-color font-medium"> $29.99</Text>
-                                        </Text>
+                                {campaigns.length > 0 ? (
+                                    // Group campaigns by category
+                                    Object.entries(
+                                        campaigns.reduce((groups, campaign) => {
+                                            const category = campaign.category || 'Other'
+                                            if (!groups[category]) groups[category] = []
+                                            groups[category].push(campaign)
+                                            return groups
+                                        }, {})
+                                    ).map(([category, categoryCampaigns]) => (
+                                        <View key={category} className="mt-4">
+                                            <Text className="text-text-secondary-color font-medium text-[13px] px-3 mb-2">{category} Promotions</Text>
+                                            {categoryCampaigns.map((campaign) => (
+                                                <TouchableOpacity
+                                                    key={campaign.id}
+                                                    onPress={() => applyCampaign(campaign)}
+                                                    className={`w-[340] h-[80] self-center mb-3 flex-row items-center px-3 rounded-md ${isCampaignApplied(campaign.id)
+                                                        ? 'bg-[#1DB954]/20 border-[#1DB954] border-2'
+                                                        : 'border-tertiary-color border-2'
+                                                        }`}
+                                                >
+                                                    <MaterialCommunityIcons
+                                                        name={campaign.icon_name || 'tag'}
+                                                        size={30}
+                                                        color="#1DB954"
+                                                    />
+                                                    <View className="flex-1 ml-3">
+                                                        <Text className="font-medium text-text-primary-color text-[14px]">{campaign.title}</Text>
+                                                        <Text className="font-regular text-text-secondary-color text-[11px]">{campaign.description}
+                                                            <Text className="text-secondary-color font-medium"> ${parseFloat(campaign.price).toFixed(2)}</Text>
+                                                        </Text>
+                                                    </View>
+                                                    {isCampaignApplied(campaign.id) ? (
+                                                        <MaterialCommunityIcons name="check-circle" size={24} color="#1DB954" />
+                                                    ) : (
+                                                        <Text className="color-secondary-color font-medium text-[12px]">Add</Text>
+                                                    )}
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    ))
+                                ) : (
+                                    <View className="w-[340] h-[60] self-center mt-4 justify-center items-center">
+                                        <Text className="text-text-secondary-color text-[12px]">No promotions available for this event</Text>
                                     </View>
-                                    <Text className="color-secondary-color font-medium text-[12px]">Apply</Text>
-                                </View>
-
-                                <View className="w-[340] h-[80] border-tertiary-color border-2 self-center mt-4 flex-row items-center px-3 rounded-md">
-                                    <MaterialCommunityIcons name="hexagon-outline" size={30} color="#1DB954" />
-                                    <View className="flex-1 ml-3">
-                                        <Text className="font-medium text-text-primary-color text-[14px]">Get Your Digital Collectible</Text>
-                                        <Text className="font-regular text-text-secondary-color text-[11px]">Get an animated NFT ticket stub for
-                                            <Text className="text-text-tertiary-color font-medium"> $9.99</Text>
-                                        </Text>
-                                    </View>
-                                    <Text className="color-secondary-color font-medium text-[12px]">Apply</Text>
-                                </View>
+                                )}
                             </>
                         )}
 
@@ -363,6 +439,12 @@ export default function Cart() {
                                             <Text className="text-text-secondary-color text-[12px]">Service fee</Text>
                                             <Text className="text-text-secondary-color text-[12px]">${serviceFee.toFixed(2)}</Text>
                                         </View>
+                                        {extras > 0 && (
+                                            <View className="flex-row justify-between mt-1">
+                                                <Text className="text-secondary-color text-[12px]">Add-ons ({appliedCampaigns.length})</Text>
+                                                <Text className="text-secondary-color text-[12px]">+${extras.toFixed(2)}</Text>
+                                            </View>
+                                        )}
                                     </View>
                                 )}
 
@@ -384,7 +466,7 @@ export default function Cart() {
                                     <Text className="font-medium text-[20px]"><Text className="text-secondary-color">$</Text><Text className="text-text-primary-color">{totalAmount.toFixed(2)}</Text></Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity onPress={() => navigation.navigate('Checkout', { minutes, seconds, event: eventData, cartSeats })} className="bg-secondary-color h-[48] rounded-lg justify-center items-center mt-4">
+                                <TouchableOpacity onPress={() => navigation.navigate('Checkout', { minutes, seconds, event: eventData, cartSeats, extras, appliedCampaigns })} className="bg-secondary-color h-[48] rounded-lg justify-center items-center mt-4">
                                     <Text className="text-text-primary-color font-medium text-[16px]">Checkout</Text>
                                 </TouchableOpacity>
                             </View>

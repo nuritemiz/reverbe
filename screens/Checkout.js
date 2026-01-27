@@ -10,7 +10,7 @@ import { scheduleEventReminder } from '../services/NotificationService'
 export default function Checkout() {
     const navigation = useNavigation()
     const route = useRoute()
-    const { minutes: initialMinutes = 5, seconds: initialSeconds = 0, event, cartSeats = [] } = route.params || {}
+    const { minutes: initialMinutes = 5, seconds: initialSeconds = 0, event, cartSeats = [], extras = 0, appliedCampaigns = [] } = route.params || {}
 
     const [minutes, setMinutes] = useState(initialMinutes)
     const [seconds, setSeconds] = useState(initialSeconds)
@@ -24,7 +24,7 @@ export default function Checkout() {
 
     const serviceFee = 4.00
     const subtotal = cartSeats.reduce((sum, seat) => sum + (seat.price || 0), 0)
-    const totalAmount = subtotal + serviceFee
+    const totalAmount = subtotal + serviceFee + extras
 
     useEffect(() => {
         const timer = setInterval(() => {

@@ -34,6 +34,7 @@ import Settings from './screens/Settings';
 import PaymentMethods from './screens/PaymentMethods';
 
 import AddNewCard from './screens/AddNewCard';
+import OrderHistory from './screens/OrderHistory';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -236,6 +237,7 @@ export default function App() {
         <Stack.Screen name="Settings" component={Settings} />
         <Stack.Screen name="PaymentMethods" component={PaymentMethods} />
         <Stack.Screen name="AddNewCard" component={AddNewCard} />
+        <Stack.Screen name="OrderHistory" component={OrderHistory} />
       </Stack.Navigator>
     </NavigationContainer>
   );
