@@ -185,7 +185,7 @@ export default function MyTickets() {
                                             </Text>
                                         </View>
                                         <TouchableOpacity
-                                            onPress={() => navigation.navigate('Tickets', {
+                                            onPress={() => navigation.navigate('TicketDetail', {
                                                 cartSeats: ticket.tickets,
                                                 event: {
                                                     id: ticket.id,
@@ -232,7 +232,7 @@ export default function MyTickets() {
                                             </Text>
                                         </View>
                                         <TouchableOpacity
-                                            onPress={() => navigation.navigate('Tickets', {
+                                            onPress={() => navigation.navigate('TicketDetail', {
                                                 cartSeats: ticket.tickets,
                                                 event: {
                                                     id: ticket.id,

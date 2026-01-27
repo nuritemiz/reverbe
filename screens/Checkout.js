@@ -129,7 +129,7 @@ export default function Checkout() {
             // Authentication error
             else if (error.code === 'PGRST301' || error.message?.includes('JWT')) {
                 alert('Session expired. Please log in again.')
-                navigation.navigate('Login')
+                navigation.navigate('Welcome')
             }
             // Database error
             else if (error.code?.startsWith('23') || error.code?.startsWith('42')) {

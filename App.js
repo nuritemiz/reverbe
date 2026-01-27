@@ -11,7 +11,7 @@ import { supabase } from './lib/supabase';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, savePushToken } from './services/NotificationService';
 import "./global.css"
-import Login from './screens/Login'
+import Welcome from './screens/Welcome'
 import Home from './screens/Home'
 import Search from './screens/Search'
 import Details from './screens/Details'
@@ -20,7 +20,7 @@ import ChooseSeat from './screens/ChooseSeat';
 import Cart from './screens/Cart';
 import Checkout from './screens/Checkout';
 import PayoutSuccess from './screens/PayoutSuccess';
-import Tickets from './screens/Tickets';
+import TicketDetail from './screens/TicketDetail';
 import MyTickets from './screens/MyTickets';
 import Profile from './screens/Profile';
 import Register from './screens/Register';
@@ -216,7 +216,7 @@ export default function App() {
       <StatusBar style="auto" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main" component={MainTabs} />
-        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Welcome" component={Welcome} />
         <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="SignIn" component={SignIn} />
         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
@@ -229,7 +229,7 @@ export default function App() {
         <Stack.Screen name="Cart" component={Cart} />
         <Stack.Screen name="Checkout" component={Checkout} />
         <Stack.Screen name="PayoutSuccess" component={PayoutSuccess} />
-        <Stack.Screen name="Tickets" component={Tickets} />
+        <Stack.Screen name="TicketDetail" component={TicketDetail} />
         <Stack.Screen name="MyTickets" component={MyTickets} />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />

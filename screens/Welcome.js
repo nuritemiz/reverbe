@@ -15,7 +15,7 @@ const TicketIcon = ({ size = 34, color = '#1DB954' }) => (
   </Svg>
 )
 
-export default function Login({ navigation }) {
+export default function Welcome({ navigation }) {
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       navigation.navigate('Main');

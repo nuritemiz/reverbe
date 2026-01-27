@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { getEventIcon } from '../utils/seatUtils'
 
-export default function Tickets() {
+export default function TicketDetail() {
     const navigation = useNavigation()
     const route = useRoute()
     const { cartSeats = [], event = null } = route.params || {}

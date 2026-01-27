@@ -28,7 +28,7 @@ export default function Profile() {
                 setAvatarUrl(profile.avatar_url);
             }
         } else {
-            navigation.replace('Login');
+            navigation.replace('Welcome');
         }
         setLoading(false);
     };

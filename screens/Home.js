@@ -7,16 +7,28 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import Skeleton from '../components/Skeleton'
 import { getUnreadCount } from '../services/NotificationService'
+import { fetchFeaturedEvents, fetchPopularEvents, fetchCategories } from '../services/EventService'
+
+
+const getCategoryIcon = (category) => {
+  const map = {
+    'Music': 'music',
+    'Cinema': 'movie-roll',
+    'Festival': 'party-popper',
+    'Sports': 'basketball',
+    'Theater': 'drama-masks',
+    'Trends': 'trending-up'
+  }
+  return map[category] || 'star'
+}
 
 export default function Home() {
   const navigation = useNavigation()
   const [activeIndex, setActiveIndex] = useState(0)
   const scrollViewRef = useRef(null)
-  const [knicksEvent, setKnicksEvent] = useState(null)
-  const [hamiltonEvent, setHamiltonEvent] = useState(null)
-  const [coldplayEvent, setColdplayEvent] = useState(null)
-  const [weekndEvent, setWeekndEvent] = useState(null)
-  const [ufcEvent, setUfcEvent] = useState(null)
+  const [featuredEvents, setFeaturedEvents] = useState([])
+  const [popularEvents, setPopularEvents] = useState([])
+  const [categories, setCategories] = useState([])
   const [userName, setUserName] = useState('')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -50,11 +62,19 @@ export default function Home() {
   }
 
   const fetchEvents = async () => {
-    await Promise.all([
-      fetchKnicksEvent(),
-      fetchHamiltonEvent(),
-      fetchFeaturedEvents()
-    ])
+    try {
+      const [featured, popular, cats] = await Promise.all([
+        fetchFeaturedEvents(),
+        fetchPopularEvents(),
+        fetchCategories()
+      ])
+
+      setFeaturedEvents(featured)
+      setPopularEvents(popular)
+      setCategories(cats)
+    } catch (error) {
+      console.error('Error fetching events:', error)
+    }
   }
 
   const onRefresh = async () => {
@@ -146,56 +166,11 @@ export default function Home() {
     }
   }
 
-  const fetchKnicksEvent = async () => {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .eq('title', 'NY Knicks vs. LA Lakers')
-      .single()
 
-    if (error) {
-      console.error('Hata:', error.message)
-    } else {
-      setKnicksEvent(data)
-    }
-  }
 
-  const fetchHamiltonEvent = async () => {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .eq('title', 'Hamilton: An American Musical')
-      .single()
 
-    if (error) {
-      console.error('Hamilton Hata:', error.message)
-    } else {
-      setHamiltonEvent(data)
-    }
-  }
 
-  const fetchFeaturedEvents = async () => {
-    const { data: coldplay } = await supabase
-      .from('events')
-      .select('*')
-      .eq('title', 'Coldplay: Music of The Spheres Tour')
-      .maybeSingle()
-    if (coldplay) setColdplayEvent(coldplay)
 
-    const { data: weeknd } = await supabase
-      .from('events')
-      .select('*')
-      .eq('title', 'The Weeknd: After Hours Til Dawn Tour')
-      .maybeSingle()
-    if (weeknd) setWeekndEvent(weeknd)
-
-    const { data: ufc } = await supabase
-      .from('events')
-      .select('*')
-      .eq('title', 'Jones vs. Miocic')
-      .maybeSingle()
-    if (ufc) setUfcEvent(ufc)
-  }
 
   // Animate dots when activeIndex changes
   useEffect(() => {
@@ -223,7 +198,7 @@ export default function Home() {
         }
       >
         <View className="mt-10 mx-3 flex-row justify-between items-center">
-          <TouchableOpacity onPress={() => userName ? navigation.navigate('Profile') : navigation.navigate('Login')} className="flex-row items-center">
+          <TouchableOpacity onPress={() => userName ? navigation.navigate('Profile') : navigation.navigate('Welcome')} className="flex-row items-center">
             <Text className="text-text-primary-color font-semibold text-[20px]">{userName ? `Hello, ${userName}` : 'Login / Sign Up'}</Text>
             <MaterialCommunityIcons name={userName ? "hand-wave" : "login"} size={24} color="#1DB954" className="ml-2" />
           </TouchableOpacity>
@@ -263,44 +238,20 @@ export default function Home() {
               onMomentumScrollEnd={handleMomentumScrollEnd}
               scrollEventThrottle={16}
             >
-              <TouchableOpacity onPress={() => coldplayEvent && navigation.navigate('Details', { event: coldplayEvent })}>
-                <View className="w-[340] h-[120] rounded-xl overflow-hidden">
-                  <Image source={require('../assets/slider-1.png')} className="w-full h-full" resizeMode='cover' />
-                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} className="absolute top-0 left-0 right-0 bottom-0 justify-end p-3">
-                    <View className="items-center">
-                      <Text className="color-secondary-color font-medium text-[11px]">NOV 15<Text className="text-text-secondary-color font-medium text-[11px]"> 20:00</Text></Text>
-                      <Text numberOfLines={1} className="text-text-primary-color font-medium text-[15px]">Coldplay: Music of The Spheres Tour</Text>
-                      <Text className="text-text-primary-color font-medium text-[12px]"><Text className="text-secondary-color font-sans text-[12px]">Wembley Stadium, </Text><Text className="text-text-tertiary-color font-sans text-[12px]">London</Text></Text>
-                    </View>
-                  </LinearGradient>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => weekndEvent && navigation.navigate('Details', { event: weekndEvent })}>
-                <View className="w-[340] h-[120] rounded-xl overflow-hidden">
-                  <Image source={require('../assets/slider-2.png')} className="w-full h-full" resizeMode='cover' />
-                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} className="absolute top-0 left-0 right-0 bottom-0 justify-end p-3">
-                    <View className="items-center">
-                      <Text className="color-secondary-color font-medium text-[11px]">NOV 29<Text className="text-text-secondary-color font-medium text-[11px]"> 20:00</Text></Text>
-                      <Text numberOfLines={1} className="text-text-primary-color font-medium text-[15px]">The Weeknd: After Hours Til Dawn Tour</Text>
-                      <Text className="text-text-primary-color font-medium text-[12px]"><Text className="text-secondary-color font-sans text-[12px]">SoFi Stadium, </Text><Text className="text-text-tertiary-color font-sans text-[12px]">Los Angeles</Text></Text>
-                    </View>
-                  </LinearGradient>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => ufcEvent && navigation.navigate('Details', { event: ufcEvent })}>
-                <View className="w-[340] h-[120] rounded-xl overflow-hidden">
-                  <Image source={require('../assets/slider-3.png')} className="w-full h-full" resizeMode='cover' />
-                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} className="absolute top-0 left-0 right-0 bottom-0 justify-end p-3">
-                    <View className="items-center">
-                      <Text className="color-secondary-color font-medium text-[11px]">DEC 08<Text className="text-text-secondary-color font-medium text-[11px]"> 21:00</Text></Text>
-                      <Text numberOfLines={1} className="text-text-primary-color font-medium text-[15px]">Jones vs. Miocic</Text>
-                      <Text className="text-text-primary-color font-medium text-[12px]"><Text className="text-secondary-color font-sans text-[12px]">T-Mobile Arena, </Text><Text className="text-text-tertiary-color font-sans text-[12px]">Las Vegas</Text></Text>
-                    </View>
-                  </LinearGradient>
-                </View>
-              </TouchableOpacity>
+              {featuredEvents.map((event) => (
+                <TouchableOpacity key={event.id} onPress={() => navigation.navigate('Details', { event })}>
+                  <View className="w-[340] h-[120] rounded-xl overflow-hidden">
+                    <Image source={{ uri: event.image_url }} className="w-full h-full" resizeMode='cover' />
+                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} className="absolute top-0 left-0 right-0 bottom-0 justify-end p-3">
+                      <View className="items-center">
+                        <Text className="color-secondary-color font-medium text-[11px]">{event.date}<Text className="text-text-secondary-color font-medium text-[11px]"> {event.time || ''}</Text></Text>
+                        <Text numberOfLines={1} className="text-text-primary-color font-medium text-[15px]">{event.title}</Text>
+                        <Text className="text-text-primary-color font-medium text-[12px]"><Text className="text-secondary-color font-sans text-[12px]">{event.location}, </Text><Text className="text-text-tertiary-color font-sans text-[12px]">{event.city}</Text></Text>
+                      </View>
+                    </LinearGradient>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </ScrollView >
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4" contentContainerStyle={{ paddingHorizontal: 12, gap: 12 }}>
@@ -332,31 +283,20 @@ export default function Home() {
           !loading ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-4">
-                <TouchableOpacity onPress={() => knicksEvent && navigation.navigate('Details', { event: knicksEvent })}>
-                  <View className="w-[189] ml-3 mt-4">
-                    <View className="w-full h-[100] rounded-xl overflow-hidden">
-                      <Image source={require('../assets/events-image-1.png')} className="w-full h-full" resizeMode='cover' />
+                {popularEvents.map((event) => (
+                  <TouchableOpacity key={event.id} onPress={() => navigation.navigate('Details', { event })}>
+                    <View className="w-[189] ml-3 mt-4">
+                      <View className="w-full h-[100] rounded-xl overflow-hidden">
+                        <Image source={{ uri: event.image_url }} className="w-full h-full" resizeMode='cover' />
+                      </View>
+                      <View className="mt-2">
+                        <Text numberOfLines={1} className="text-text-primary-color font-medium text-[12px]">{event.title}</Text>
+                        <Text numberOfLines={1} className="text-text-secondary-color font-sans text-[11px]">{event.location}, <Text className="text-text-tertiary-color font-sans text-[11px]">{event.city}</Text></Text>
+                        <Text className="text-text-tertiary-color font-sans text-[11px] mt-1">{event.date}</Text>
+                      </View>
                     </View>
-                    <View className="mt-2">
-                      <Text className="text-text-primary-color font-medium text-[12px]">NY Knicks vs. LA Lakers</Text>
-                      <Text className="text-text-secondary-color font-sans text-[11px]">Madison Square Garden, <Text className="text-text-tertiary-color font-sans text-[11px]">NY</Text></Text>
-                      <Text className="text-text-tertiary-color font-sans text-[11px] mt-1">DEC 05 19:30</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => hamiltonEvent && navigation.navigate('Details', { event: hamiltonEvent })}>
-                  <View className="w-[189] ml-3 mt-4">
-                    <View className="w-full h-[100] rounded-xl overflow-hidden">
-                      <Image source={hamiltonEvent?.image_url ? { uri: hamiltonEvent.image_url } : require('../assets/hamilton.png')} className="w-full h-full" resizeMode='cover' />
-                    </View>
-                    <View className="mt-2">
-                      <Text className="text-text-primary-color font-medium text-[12px]">Hamilton: An American Musical</Text>
-                      <Text className="text-text-secondary-color font-sans text-[11px]">Richard Rodgers Theatre, <Text className="text-text-tertiary-color font-sans text-[11px]">NY</Text></Text>
-                      <Text className="text-text-tertiary-color font-sans text-[11px] mt-1">Playing, 20:00</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
               </View>
             </ScrollView>
           ) : (
@@ -386,26 +326,14 @@ export default function Home() {
           !loading ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-2">
-                <TouchableOpacity onPress={() => navigation.navigate('Search', { initialCategory: 'Music' })}>
-                  <View className="w-[138] h-[74] bg-tertiary-color ml-3 mt-4 rounded-xl items-center justify-center flex-row gap-2">
-                    <MaterialCommunityIcons name="music" size={24} color="#1DB954" />
-                    <Text className="text-text-primary-color font-medium text-[14px]">Music</Text>
-                  </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => navigation.navigate('Search', { initialCategory: 'Cinema' })}>
-                  <View className="w-[138] h-[74] bg-tertiary-color ml-3 mt-4 rounded-xl items-center justify-center flex-row gap-2">
-                    <MaterialCommunityIcons name="movie-roll" size={24} color="#1DB954" />
-                    <Text className="text-text-primary-color font-medium text-[14px]">Cinema</Text>
-                  </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => navigation.navigate('Search', { initialCategory: 'Festival' })}>
-                  <View className="w-[138] h-[74] bg-tertiary-color ml-3 mt-4 rounded-xl items-center justify-center flex-row gap-2">
-                    <MaterialIcons name="festival" size={24} color="#1DB954" />
-                    <Text className="text-text-primary-color font-medium text-[14px]">Festival</Text>
-                  </View>
-                </TouchableOpacity>
+                {categories.map((category) => (
+                  <TouchableOpacity key={category} onPress={() => navigation.navigate('Search', { initialCategory: category })}>
+                    <View className="w-[138] h-[74] bg-tertiary-color ml-3 mt-4 rounded-xl items-center justify-center flex-row gap-2">
+                      <MaterialCommunityIcons name={getCategoryIcon(category)} size={24} color="#1DB954" />
+                      <Text className="text-text-primary-color font-medium text-[14px]">{category}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
               </View>
             </ScrollView>
           ) : (

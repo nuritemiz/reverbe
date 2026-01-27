@@ -52,7 +52,7 @@ export default function Details() {
         if (user) {
             navigation.navigate('ChooseTier', { event })
         } else {
-            navigation.navigate('Login')
+            navigation.navigate('Welcome')
         }
     }
 

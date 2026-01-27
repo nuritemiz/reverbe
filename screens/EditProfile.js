@@ -27,7 +27,7 @@ export default function EditProfile() {
             const { data: { user }, error: authError } = await supabase.auth.getUser()
 
             if (authError || !user) {
-                navigation.replace('Login')
+                navigation.replace('Welcome')
                 return
             }
 
@@ -63,7 +63,7 @@ export default function EditProfile() {
             const { data: { user } } = await supabase.auth.getUser()
 
             if (!user) {
-                navigation.replace('Login')
+                navigation.replace('Welcome')
                 return
             }
 
