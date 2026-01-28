@@ -200,7 +200,6 @@ export default function Checkout() {
 
                 <View className="flex-row justify-between items-center px-3 mt-8">
                     <Text className="text-text-primary-color font-medium text-[18px]">Select Payment Method</Text>
-                    <Text className="text-secondary-color font-medium text-[12px]">Add new method</Text>
                 </View>
 
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4 pl-3">

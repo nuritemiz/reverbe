@@ -190,10 +190,30 @@ export default function ChooseSeat() {
                 if (checkError) throw checkError
 
                 if (seatCheck.status !== 'available') {
-                    showAlert('Unavailable', `Seat ${seat.row_letter}${seat.seat_number} is no longer available.`)
-                    await fetchSeats()
-                    setSelectedSeats([])
-                    return
+                    // Check if this is our own reservation
+                    let isMyReservation = false
+
+                    if (seatCheck.status === 'reserved') {
+                        const { data: myReservation } = await supabase
+                            .from('cart_reservations')
+                            .select('id')
+                            .eq('user_id', user.id)
+                            .eq('event_id', event.id)
+                            .eq('row_letter', seat.row_letter)
+                            .eq('seat_number', seat.seat_number)
+                            .maybeSingle()
+
+                        if (myReservation) {
+                            isMyReservation = true
+                        }
+                    }
+
+                    if (!isMyReservation) {
+                        showAlert('Unavailable', `Seat ${seat.row_letter}${seat.seat_number} is no longer available.`)
+                        await fetchSeats()
+                        setSelectedSeats([])
+                        return
+                    }
                 }
 
                 const { error } = await supabase
