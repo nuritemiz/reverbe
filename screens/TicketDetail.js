@@ -38,7 +38,7 @@ export default function TicketDetail() {
                                 <Text className="text-secondary-color text-[14px] text-center font-medium">View Event Detail</Text>
                             </TouchableOpacity>
 
-                            <View className="flex-row justify-around items-center mt-8">
+                            <View className="flex-row justify-around items-start mt-8">
                                 <View className="items-center flex-1">
                                     <Text className="text-text-primary-color font-medium text-[16px]">Seat</Text>
                                     <Text className="text-text-secondary-color text-[16px] mt-1">{seat.seat_number}</Text>
@@ -51,7 +51,7 @@ export default function TicketDetail() {
                                 <View className="w-[2] h-[40] bg-primary-color" />
                                 <View className="items-center flex-1">
                                     <Text className="text-text-primary-color font-medium text-[16px]">Section</Text>
-                                    <Text className="text-text-secondary-color text-[16px] mt-1">{seat.section}</Text>
+                                    <Text className="text-text-secondary-color text-[16px] mt-1 text-center">{seat.section}</Text>
                                 </View>
                             </View>
 
