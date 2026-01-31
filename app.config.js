@@ -1,0 +1,57 @@
+import 'dotenv/config';
+
+export default {
+    expo: {
+        name: "Reverbe",
+        slug: "berst",
+        version: "1.0.0",
+        orientation: "portrait",
+        scheme: "reverbe",
+        icon: "./assets/icon.png",
+        userInterfaceStyle: "light",
+        splash: {
+            image: "./assets/splash-icon-light.png",
+            resizeMode: "contain",
+            backgroundColor: "#0E0E0E"
+        },
+        ios: {
+            supportsTablet: true,
+            newArchEnabled: true
+        },
+        android: {
+            adaptiveIcon: {
+                foregroundImage: "./assets/adaptive-icon.png",
+                backgroundColor: "#0E0E0E"
+            },
+            package: "com.reverbe.app",
+            edgeToEdgeEnabled: true,
+            newArchEnabled: true,
+            config: {
+                googleMaps: {
+                    apiKey: process.env.GOOGLE_MAPS_API_KEY
+                }
+            }
+        },
+        web: {
+            bundler: "metro"
+        },
+        plugins: [
+            [
+                "expo-build-properties",
+                {
+                    android: {
+                        newArchEnabled: true
+                    },
+                    ios: {
+                        newArchEnabled: true
+                    }
+                }
+            ]
+        ],
+        extra: {
+            eas: {
+                projectId: "0b0372fd-132a-4214-b2b0-21be1c72cf0b"
+            }
+        }
+    }
+};
