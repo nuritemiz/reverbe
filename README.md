@@ -1,6 +1,6 @@
 # Reverbe 
 
-Reverbe is a modern, seamless mobile application for discovering events and booking tickets. Built with React Native and Supabase, it offers a premium user experience for selecting seats, managing bookings, and secure payments.
+Reverbe is a modern, seamless mobile application for discovering events and booking tickets. Built with React Native, Nativewind, Expo and Supabase, it offers a premium user experience for selecting seats, managing bookings, and secure payments.
 
 ##  Features
 
