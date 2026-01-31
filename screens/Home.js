@@ -187,7 +187,7 @@ export default function Home() {
     <SafeAreaView className="flex-1 bg-primary-color">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 12 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

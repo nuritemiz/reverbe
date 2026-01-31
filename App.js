@@ -12,7 +12,7 @@ import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, savePushToken } from './services/NotificationService';
 import { AlertProvider } from './context/AlertContext';
 import "./global.css"
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaProvider } from 'react-native-safe-area-context';
 import * as NavigationBar from 'expo-navigation-bar';
 
 import Welcome from './screens/Welcome'
@@ -46,7 +46,8 @@ const Tab = createBottomTabNavigator();
 
 
 
-function MainTabs({ navigation }) {
+// Optimization 2: React.memo to prevent unnecessary re-renders of the tab navigator
+const MainTabs = React.memo(({ navigation }) => {
   const [hasCartItems, setHasCartItems] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -57,6 +58,7 @@ function MainTabs({ navigation }) {
     }, [])
   );
 
+  // Optimization: Efficient navigation listener with cleanup
   React.useEffect(() => {
     const unsubscribe = navigation.addListener('state', () => {
       checkCartStatus();
@@ -65,6 +67,7 @@ function MainTabs({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
+  // Optimization 1 & 3: checkCartStatus optimized to count only (head: true)
   const checkCartStatus = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -73,15 +76,15 @@ function MainTabs({ navigation }) {
         return;
       }
 
-      const { data: reservations, error } = await supabase
+      // Optimization: Select only count, not data (SELECT * vs count)
+      const { count, error } = await supabase
         .from('cart_reservations')
-        .select('id')
+        .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .gt('expires_at', new Date().toISOString())
-        .limit(1);
+        .gt('expires_at', new Date().toISOString());
 
       if (error) throw error;
-      setHasCartItems(reservations && reservations.length > 0);
+      setHasCartItems(count > 0);
     } catch (error) {
       console.error('Error checking cart status:', error);
     }
@@ -133,9 +136,12 @@ function MainTabs({ navigation }) {
         tabBarStyle: {
           backgroundColor: '#1C1C1E',
           borderTopWidth: 0,
-          height: 60 + insets.bottom,
-          paddingBottom: insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 10),
           paddingTop: 10,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -165,7 +171,7 @@ function MainTabs({ navigation }) {
       />
     </Tab.Navigator >
   );
-}
+});
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -181,6 +187,8 @@ export default function App() {
       if (Platform.OS === 'android') {
         await NavigationBar.setBackgroundColorAsync('#1C1C1E');
         await NavigationBar.setButtonStyleAsync('light');
+        await NavigationBar.setPositionAsync('absolute');
+        await NavigationBar.setVisibilityAsync('visible');
       }
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -213,44 +221,49 @@ export default function App() {
   }
 
   return (
-    <AlertProvider>
-      <NavigationContainer
-        linking={{
-          prefixes: ['reverbe://'],
-          config: {
-            screens: {
-              ResetPassword: 'reset-password',
+    <SafeAreaProvider>
+      <AlertProvider>
+        <NavigationContainer
+          linking={{
+            prefixes: ['reverbe://'],
+            config: {
+              screens: {
+                ResetPassword: 'reset-password',
+              },
             },
-          },
-        }}
-      >
-        <StatusBar style="auto" />
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Main" component={MainTabs} />
-          <Stack.Screen name="Welcome" component={Welcome} />
-          <Stack.Screen name="Register" component={Register} />
-          <Stack.Screen name="SignIn" component={SignIn} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-          <Stack.Screen name="ResetPassword" component={ResetPassword} />
-          <Stack.Screen name="Home" component={Home} />
-          <Stack.Screen name="Search" component={Search} />
-          <Stack.Screen name="Details" component={Details} />
-          <Stack.Screen name="ChooseTier" component={ChooseTier} />
-          <Stack.Screen name="ChooseSeat" component={ChooseSeat} />
-          <Stack.Screen name="Cart" component={Cart} />
-          <Stack.Screen name="Checkout" component={Checkout} />
-          <Stack.Screen name="PayoutSuccess" component={PayoutSuccess} />
-          <Stack.Screen name="TicketDetail" component={TicketDetail} />
-          <Stack.Screen name="MyTickets" component={MyTickets} />
-          <Stack.Screen name="Profile" component={Profile} />
-          <Stack.Screen name="Notifications" component={NotificationsScreen} />
-          <Stack.Screen name="EditProfile" component={EditProfile} />
-          <Stack.Screen name="Settings" component={Settings} />
-          <Stack.Screen name="PaymentMethods" component={PaymentMethods} />
-          <Stack.Screen name="AddNewCard" component={AddNewCard} />
-          <Stack.Screen name="OrderHistory" component={OrderHistory} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </AlertProvider>
+          }}
+        >
+          <StatusBar style="light" backgroundColor="#000" />
+          <Stack.Navigator screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#000' }
+          }}>
+            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen name="Welcome" component={Welcome} />
+            <Stack.Screen name="Register" component={Register} />
+            <Stack.Screen name="SignIn" component={SignIn} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+            <Stack.Screen name="ResetPassword" component={ResetPassword} />
+            <Stack.Screen name="Home" component={Home} />
+            <Stack.Screen name="Search" component={Search} />
+            <Stack.Screen name="Details" component={Details} />
+            <Stack.Screen name="ChooseTier" component={ChooseTier} />
+            <Stack.Screen name="ChooseSeat" component={ChooseSeat} />
+            <Stack.Screen name="Cart" component={Cart} />
+            <Stack.Screen name="Checkout" component={Checkout} />
+            <Stack.Screen name="PayoutSuccess" component={PayoutSuccess} />
+            <Stack.Screen name="TicketDetail" component={TicketDetail} />
+            <Stack.Screen name="MyTickets" component={MyTickets} />
+            <Stack.Screen name="Profile" component={Profile} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            <Stack.Screen name="EditProfile" component={EditProfile} />
+            <Stack.Screen name="Settings" component={Settings} />
+            <Stack.Screen name="PaymentMethods" component={PaymentMethods} />
+            <Stack.Screen name="AddNewCard" component={AddNewCard} />
+            <Stack.Screen name="OrderHistory" component={OrderHistory} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </AlertProvider>
+    </SafeAreaProvider>
   );
 }
