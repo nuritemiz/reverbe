@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native'
-import React, { useState, useEffect } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
@@ -8,11 +8,32 @@ import Skeleton from '../components/Skeleton'
 import { getSeatingMapImage, getTicketTypes, getSeatingLayout } from '../utils/seatUtils'
 import { useAlert } from '../context/AlertContext'
 
+const Seat = React.memo(({ row, seatNum, status, size, fontSize, color, disabled, onPress }) => (
+    <TouchableOpacity
+        onPress={() => onPress(row, seatNum)}
+        disabled={disabled}
+    >
+        <View
+            style={{
+                width: size,
+                height: size,
+                backgroundColor: color,
+                borderRadius: 2,
+                justifyContent: 'center',
+                alignItems: 'center'
+            }}
+        >
+            <Text style={{ fontSize: fontSize, fontWeight: '500', color: status === 'available' ? '#1C1C1E' : '#FFFFFF' }}>{seatNum}</Text>
+        </View>
+    </TouchableOpacity>
+))
+
 export default function ChooseSeat() {
     const navigation = useNavigation()
     const route = useRoute()
     const { showAlert } = useAlert()
     const { event, selectedTier } = route.params
+    const insets = useSafeAreaInsets()
 
     const [showMap, setShowMap] = useState(false)
     const [seats, setSeats] = useState([])
@@ -22,6 +43,19 @@ export default function ChooseSeat() {
     const layout = getSeatingLayout(event)
     const rows = layout.rows
     const seatNumbers = layout.seatNumbers
+
+    // Optimization: Create Maps for O(1) lookups
+    const seatMap = useMemo(() => {
+        const map = new Map()
+        seats.forEach(s => map.set(`${s.row_letter}${s.seat_number}`, s))
+        return map
+    }, [seats])
+
+    const selectedSeatsSet = useMemo(() => {
+        const set = new Set()
+        selectedSeats.forEach(s => set.add(`${s.row_letter}${s.seat_number}`))
+        return set
+    }, [selectedSeats])
 
     useEffect(() => {
         fetchSeats()
@@ -37,13 +71,12 @@ export default function ChooseSeat() {
                 .from('cart_reservations')
                 .select('*')
                 .eq('user_id', user.id)
-                .eq('event_id', event.id) // Only check for THIS event
+                .eq('event_id', event.id)
                 .gt('expires_at', new Date().toISOString())
 
             if (error) throw error
 
             if (reservations && reservations.length > 0) {
-                // User has active reservations for THIS event, navigate to Cart
                 navigation.navigate('Cart', {
                     fromReservationCheck: true,
                     event
@@ -78,14 +111,9 @@ export default function ChooseSeat() {
 
     const initializeEventSeats = async () => {
         const tiers = getTicketTypes(event)
-        // Sort tiers by higher price (VIP first) to assign to front rows
-        // tiers is already sorted VIP -> General -> Standard from utils
 
         const newSeats = []
-        const totalRows = rows.length // 8
-
-        // Dynamic tier distribution based on percentage of total rows
-        // Front 25% = Tier 1, Middle 40% = Tier 2, Back 35% = Tier 3
+        const totalRows = rows.length
 
         rows.forEach((row, rowIndex) => {
             let tier
@@ -93,15 +121,15 @@ export default function ChooseSeat() {
                 const tier1End = Math.floor(totalRows * 0.25)
                 const tier2End = Math.floor(totalRows * 0.65)
 
-                if (rowIndex < tier1End) tier = tiers[0] // VIP
-                else if (rowIndex < tier2End) tier = tiers[1] // General
-                else tier = tiers[2] // Standard
+                if (rowIndex < tier1End) tier = tiers[0]
+                else if (rowIndex < tier2End) tier = tiers[1]
+                else tier = tiers[2]
             } else if (tiers.length === 2) {
                 const tier1End = Math.floor(totalRows * 0.4)
-                if (rowIndex < tier1End) tier = tiers[0] // Premium/VIP
-                else tier = tiers[1] // Standard
+                if (rowIndex < tier1End) tier = tiers[0]
+                else tier = tiers[1]
             } else {
-                tier = tiers[0] // Single tier
+                tier = tiers[0]
             }
 
             seatNumbers.forEach(num => {
@@ -109,7 +137,7 @@ export default function ChooseSeat() {
                     event_id: event.id,
                     row_letter: row,
                     seat_number: num,
-                    status: 'available', // Clean slate for new events
+                    status: 'available',
                     section: tier.section,
                     price: tier.numericPrice
                 })
@@ -129,30 +157,30 @@ export default function ChooseSeat() {
         }
     }
 
-    const getSeatStatus = (row, seatNum) => {
-        const seat = seats.find(s => s.row_letter === row && s.seat_number === seatNum)
+    const getSeatStatus = useCallback((row, seatNum) => {
+        const key = `${row}${seatNum}`
+
+        if (selectedSeatsSet.has(key)) return 'selected'
+
+        const seat = seatMap.get(key)
         if (!seat) return 'available'
 
-        const isSelected = selectedSeats.some(s => s.row_letter === row && s.seat_number === seatNum)
-        if (isSelected) return 'selected'
-
         return seat.status
-    }
+    }, [selectedSeatsSet, seatMap])
 
-    const handleSeatPress = (row, seatNum) => {
-        const seat = seats.find(s => s.row_letter === row && s.seat_number === seatNum)
+    const handleSeatPress = useCallback((row, seatNum) => {
+        const key = `${row}${seatNum}`
+        const seat = seatMap.get(key)
+
         if (!seat || seat.status === 'sold' || seat.status === 'reserved') return
 
-        const isAlreadySelected = selectedSeats.some(
-            s => s.row_letter === row && s.seat_number === seatNum
-        )
+        const isAlreadySelected = selectedSeatsSet.has(key)
 
         if (isAlreadySelected) {
             setSelectedSeats(prev => prev.filter(
                 s => !(s.row_letter === row && s.seat_number === seatNum)
             ))
         } else {
-            // Use selected tier's price and section instead of seat's stored values
             setSelectedSeats(prev => [...prev, {
                 row_letter: row,
                 seat_number: seatNum,
@@ -160,7 +188,7 @@ export default function ChooseSeat() {
                 price: selectedTier ? selectedTier.numericPrice : seat.price
             }])
         }
-    }
+    }, [seatMap, selectedSeatsSet, selectedTier])
 
     const buyTickets = async () => {
         if (selectedSeats.length === 0) {
@@ -179,68 +207,23 @@ export default function ChooseSeat() {
             expiresAt.setMinutes(expiresAt.getMinutes() + 5)
 
             for (const seat of selectedSeats) {
-                const { data: seatCheck, error: checkError } = await supabase
-                    .from('seats')
-                    .select('status')
-                    .eq('event_id', event.id)
-                    .eq('row_letter', seat.row_letter)
-                    .eq('seat_number', seat.seat_number)
-                    .single()
-
-                if (checkError) throw checkError
-
-                if (seatCheck.status !== 'available') {
-                    // Check if this is our own reservation
-                    let isMyReservation = false
-
-                    if (seatCheck.status === 'reserved') {
-                        const { data: myReservation } = await supabase
-                            .from('cart_reservations')
-                            .select('id')
-                            .eq('user_id', user.id)
-                            .eq('event_id', event.id)
-                            .eq('row_letter', seat.row_letter)
-                            .eq('seat_number', seat.seat_number)
-                            .maybeSingle()
-
-                        if (myReservation) {
-                            isMyReservation = true
-                        }
-                    }
-
-                    if (!isMyReservation) {
-                        showAlert('Unavailable', `Seat ${seat.row_letter}${seat.seat_number} is no longer available.`)
-                        await fetchSeats()
-                        setSelectedSeats([])
-                        return
-                    }
-                }
-
-                const { error } = await supabase
-                    .from('seats')
-                    .update({ status: 'reserved' })
-                    .eq('event_id', event.id)
-                    .eq('row_letter', seat.row_letter)
-                    .eq('seat_number', seat.seat_number)
+                const { data: result, error } = await supabase.rpc('reserve_seat', {
+                    p_event_id: event.id,
+                    p_row_letter: seat.row_letter,
+                    p_seat_number: seat.seat_number,
+                    p_user_id: user.id,
+                    p_section: seat.section,
+                    p_price: seat.price
+                })
 
                 if (error) throw error
 
-                const { error: reservationError } = await supabase
-                    .from('cart_reservations')
-                    .upsert({
-                        user_id: user.id,
-                        seat_id: `${seat.row_letter}${seat.seat_number}`,
-                        event_id: event.id,
-                        row_letter: seat.row_letter,
-                        seat_number: seat.seat_number,
-                        price: seat.price,
-                        section: seat.section,
-                        expires_at: expiresAt.toISOString()
-                    }, {
-                        onConflict: 'user_id,seat_id,event_id'
-                    })
-
-                if (reservationError) throw reservationError
+                if (!result.success) {
+                    showAlert('Unavailable', result.message || `Seat ${seat.row_letter}${seat.seat_number} is no longer available.`)
+                    await fetchSeats()
+                    setSelectedSeats([])
+                    return
+                }
             }
 
             setSeats(prev => prev.map(s => {
@@ -273,7 +256,7 @@ export default function ChooseSeat() {
         }
     }
 
-    const totalPrice = selectedSeats.reduce((sum, seat) => sum + seat.price, 0)
+    const totalPrice = useMemo(() => selectedSeats.reduce((sum, seat) => sum + seat.price, 0), [selectedSeats]);
 
     return (
         <SafeAreaView className="bg-primary-color flex-1">
@@ -297,7 +280,7 @@ export default function ChooseSeat() {
                     <Text className="font-medium text-[12px] text-text-tertiary-color text-center"> {event.date}</Text>
                 </View>
 
-                {/* Loading State / Map Toggle */}
+
                 {loading ? (
                     <View className="mt-6 px-3 items-center">
                         {rows.slice(0, 5).map((row, i) => (
@@ -356,7 +339,7 @@ export default function ChooseSeat() {
                         >
                             <View className="items-center">
                                 {rows.map((row) => {
-                                    // Dynamic seat size based on number of seats
+
                                     const seatSize = seatNumbers.length <= 10 ? 28 : seatNumbers.length <= 12 ? 24 : 20
                                     const fontSize = seatNumbers.length <= 10 ? 10 : seatNumbers.length <= 12 ? 9 : 8
 
@@ -367,24 +350,17 @@ export default function ChooseSeat() {
                                                 {seatNumbers.map((seatNum) => {
                                                     const status = getSeatStatus(row, seatNum)
                                                     return (
-                                                        <TouchableOpacity
+                                                        <Seat
                                                             key={`${row}${seatNum}`}
-                                                            onPress={() => handleSeatPress(row, seatNum)}
+                                                            row={row}
+                                                            seatNum={seatNum}
+                                                            status={status}
+                                                            size={seatSize}
+                                                            fontSize={fontSize}
+                                                            color={getSeatColor(status)}
                                                             disabled={status === 'sold' || status === 'reserved'}
-                                                        >
-                                                            <View
-                                                                style={{
-                                                                    width: seatSize,
-                                                                    height: seatSize,
-                                                                    backgroundColor: getSeatColor(status),
-                                                                    borderRadius: 2,
-                                                                    justifyContent: 'center',
-                                                                    alignItems: 'center'
-                                                                }}
-                                                            >
-                                                                <Text style={{ fontSize: fontSize, fontWeight: '500', color: status === 'available' ? '#1C1C1E' : '#FFFFFF' }}>{seatNum}</Text>
-                                                            </View>
-                                                        </TouchableOpacity>
+                                                            onPress={handleSeatPress}
+                                                        />
                                                     )
                                                 })}
                                             </View>
@@ -446,7 +422,7 @@ export default function ChooseSeat() {
             {
                 !showMap && (
                     <TouchableOpacity
-                        className="absolute bottom-10 left-3 right-3"
+                        style={{ position: 'absolute', bottom: 10 + insets.bottom, left: 12, right: 12 }}
                         onPress={buyTickets}
                         disabled={selectedSeats.length === 0}
                     >
@@ -457,6 +433,6 @@ export default function ChooseSeat() {
                     </TouchableOpacity>
                 )
             }
-        </SafeAreaView >
+        </SafeAreaView>
     )
 }

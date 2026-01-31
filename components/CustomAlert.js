@@ -39,7 +39,7 @@ export default function CustomAlert({ visible, title, message, buttons = [], onC
 
     if (!visible) return null
 
-    // Default button if none provided
+
     const alertButtons = buttons.length > 0 ? buttons : [
         { text: 'OK', onPress: onClose, style: 'default' }
     ]
@@ -59,7 +59,7 @@ export default function CustomAlert({ visible, title, message, buttons = [], onC
                     }}
                     className="w-full max-w-[340px] bg-tertiary-color rounded-lg overflow-hidden border "
                 >
-                    {/* Header */}
+
                     <View className="items-center pt-6 pb-2 px-6">
                         <Text className="text-white font-bold text-[18px] text-center mb-2">
                             {title}
@@ -69,7 +69,7 @@ export default function CustomAlert({ visible, title, message, buttons = [], onC
                         </Text>
                     </View>
 
-                    {/* Buttons */}
+
                     <View className="flex-row border-t border-[#2C2C2E] mt-4">
                         {alertButtons.map((btn, index) => (
                             <TouchableOpacity

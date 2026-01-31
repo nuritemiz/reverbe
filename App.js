@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
@@ -12,6 +12,9 @@ import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, savePushToken } from './services/NotificationService';
 import { AlertProvider } from './context/AlertContext';
 import "./global.css"
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as NavigationBar from 'expo-navigation-bar';
+
 import Welcome from './screens/Welcome'
 import Home from './screens/Home'
 import Search from './screens/Search'
@@ -45,6 +48,7 @@ const Tab = createBottomTabNavigator();
 
 function MainTabs({ navigation }) {
   const [hasCartItems, setHasCartItems] = useState(false);
+  const insets = useSafeAreaInsets();
 
 
   useFocusEffect(
@@ -129,8 +133,8 @@ function MainTabs({ navigation }) {
         tabBarStyle: {
           backgroundColor: '#1C1C1E',
           borderTopWidth: 0,
-          height: 70,
-          paddingBottom: 10,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom,
           paddingTop: 10,
         },
         tabBarLabelStyle: {
@@ -173,7 +177,12 @@ export default function App() {
   });
 
   useEffect(() => {
-    const setupNotifications = async () => {
+    const setupApp = async () => {
+      if (Platform.OS === 'android') {
+        await NavigationBar.setBackgroundColorAsync('#1C1C1E');
+        await NavigationBar.setButtonStyleAsync('light');
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const token = await registerForPushNotificationsAsync();
@@ -183,7 +192,7 @@ export default function App() {
       }
     };
 
-    setupNotifications();
+    setupApp();
 
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification);

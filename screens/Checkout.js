@@ -1,8 +1,9 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, TextInput } from 'react-native'
-import React, { useState, useEffect } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, Modal, FlatList } from 'react-native'
+import React, { useState, useEffect, useCallback } from 'react'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons'
-import { useNavigation, useRoute, CommonActions } from '@react-navigation/native'
+import { useNavigation, useRoute, CommonActions, useFocusEffect } from '@react-navigation/native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import { scheduleEventReminder } from '../services/NotificationService'
 import { useAlert } from '../context/AlertContext'
@@ -13,16 +14,24 @@ export default function Checkout() {
     const route = useRoute()
     const { showAlert } = useAlert()
     const { minutes: initialMinutes = 5, seconds: initialSeconds = 0, event, cartSeats = [], extras = 0, appliedCampaigns = [] } = route.params || {}
+    const insets = useSafeAreaInsets()
 
     const [minutes, setMinutes] = useState(initialMinutes)
     const [seconds, setSeconds] = useState(initialSeconds)
     const [selectedPayment, setSelectedPayment] = useState(null)
     const [promoCode, setPromoCode] = useState('')
+
+    // Payment Form State
     const [cardNumber, setCardNumber] = useState('')
     const [expiryDate, setExpiryDate] = useState('')
     const [cvv, setCvv] = useState('')
     const [cardName, setCardName] = useState('')
     const [saveCard, setSaveCard] = useState(false)
+
+    // Saved Cards State
+    const [showCardsModal, setShowCardsModal] = useState(false)
+    const [savedCards, setSavedCards] = useState([])
+    const [selectedSavedCard, setSelectedSavedCard] = useState(null)
 
     const serviceFee = 4.00
     const subtotal = cartSeats.reduce((sum, seat) => sum + (seat.price || 0), 0)
@@ -43,18 +52,98 @@ export default function Checkout() {
         return () => clearInterval(timer)
     }, [minutes, seconds])
 
+    useFocusEffect(
+        useCallback(() => {
+            loadSavedCards()
+        }, [])
+    )
+
+    const loadSavedCards = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                const key = `savedCards_${user.id}`
+                const storedCards = await AsyncStorage.getItem(key)
+                if (storedCards) {
+                    setSavedCards(JSON.parse(storedCards))
+                }
+            }
+        } catch (error) {
+            console.error('Error loading saved cards:', error)
+        }
+    }
+
+    // Input Formatters
+    const formatCardNumber = (text) => {
+        const cleaned = text.replace(/\D/g, '')
+        const limited = cleaned.slice(0, 16)
+        const formatted = limited.match(/.{1,4}/g)?.join(' ') || limited
+        setCardNumber(formatted)
+        if (selectedSavedCard) setSelectedSavedCard(null) // Reset saved card if user types manually
+    }
+
+    const formatExpiryDate = (text) => {
+        const cleaned = text.replace(/\D/g, '')
+        if (cleaned.length >= 2) {
+            setExpiryDate(cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4))
+        } else {
+            setExpiryDate(cleaned)
+        }
+        if (selectedSavedCard) setSelectedSavedCard(null)
+    }
+
+    const handleSelectSavedCard = (card) => {
+        setSelectedSavedCard(card)
+        setCardNumber(`**** **** **** ${card.last4}`)
+        setExpiryDate(card.expiry)
+        setCardName('Saved Card') // Placeholder or can be stored
+        setShowCardsModal(false)
+    }
+
     const handlePayment = async () => {
         try {
+            // Basic validation
+            if (selectedPayment === 'credit') {
+                if (!selectedSavedCard) {
+                    if (cardNumber.length < 19) { // 16 digits + 3 spaces
+                        showAlert('Invalid Card', 'Please enter a valid card number')
+                        return
+                    }
+                    if (expiryDate.length < 5) {
+                        showAlert('Invalid Date', 'Please enter a valid expiry date (MM/YY)')
+                        return
+                    }
+                    if (!cardName) {
+                        showAlert('Required', 'Please enter the cardholder name')
+                        return
+                    }
+                }
+                if (cvv.length < 3) {
+                    showAlert('Required', 'Please enter the CVV')
+                    return
+                }
+            }
 
             const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-            console.log('User data:', user)
-            console.log('User ID:', user?.id)
-            console.log('User error:', userError)
 
             if (userError || !user) {
                 showAlert('Required', 'Please sign in to complete your purchase')
                 return
+            }
+
+            // Save new card if requested and not using a saved one
+            if (saveCard && !selectedSavedCard && selectedPayment === 'credit') {
+                const newCard = {
+                    id: Math.random().toString(),
+                    type: cardNumber.startsWith('4') ? 'Visa' : 'Mastercard', // Simple detection
+                    last4: cardNumber.slice(-4),
+                    expiry: expiryDate,
+                    icon: cardNumber.startsWith('4') ? 'credit-card' : 'credit-card-outline'
+                }
+                const key = `savedCards_${user.id}`
+                const currentCards = [...savedCards, newCard]
+                await AsyncStorage.setItem(key, JSON.stringify(currentCards))
+                setSavedCards(currentCards)
             }
 
             const orderNumber = `${Math.floor(10000 + Math.random() * 90000)}-${Math.floor(10000 + Math.random() * 90000)}`
@@ -62,7 +151,7 @@ export default function Checkout() {
             for (const seat of cartSeats) {
                 const ticketData = {
                     user_id: user.id,
-                    event_id: seat.event?.id || seat.event_id, // Use seat specific event id
+                    event_id: seat.event?.id || seat.event_id,
                     seat_number: seat.seat_number,
                     row_letter: seat.row_letter,
                     section: seat.section,
@@ -70,38 +159,29 @@ export default function Checkout() {
                     order_number: orderNumber,
                 }
 
-                console.log('Inserting ticket:', ticketData)
-
                 const { error: purchaseError } = await supabase
                     .from('purchased_tickets')
                     .insert(ticketData)
 
-                if (purchaseError) {
-                    console.error('Purchase error:', purchaseError)
-                    throw purchaseError
-                }
-
-                console.log('Ticket inserted successfully')
+                if (purchaseError) throw purchaseError
 
                 const { error: seatError } = await supabase
                     .from('seats')
                     .update({ status: 'sold' })
-                    .eq('event_id', seat.event?.id || seat.event_id) // Use seat specific event id
+                    .eq('event_id', seat.event?.id || seat.event_id)
                     .eq('row_letter', seat.row_letter)
                     .eq('seat_number', seat.seat_number)
 
                 if (seatError) throw seatError
             }
 
-            // Delete cart reservations after successful purchase
+            // Delete cart reservations
             const { error: deleteError } = await supabase
                 .from('cart_reservations')
                 .delete()
                 .eq('user_id', user.id)
 
-            if (deleteError) {
-                console.error('Error deleting cart reservations:', deleteError)
-            }
+            if (deleteError) console.error('Error deleting cart reservations:', deleteError)
 
             await scheduleEventReminder(event, { id: null }, user.id)
 
@@ -124,20 +204,13 @@ export default function Checkout() {
         } catch (error) {
             console.error('Payment error:', error)
 
-            // Network error
             if (error.message === 'Failed to fetch' || error.message?.includes('network')) {
                 showAlert('Network Error', 'Network error during payment. Please check your connection and try again. Your seats are still reserved.')
             }
-            // Authentication error
             else if (error.code === 'PGRST301' || error.message?.includes('JWT')) {
                 showAlert('Session Expired', 'Session expired. Please log in again.')
                 navigation.navigate('Welcome')
             }
-            // Database error
-            else if (error.code?.startsWith('23') || error.code?.startsWith('42')) {
-                showAlert('Database Error', 'Database error. Please contact support if this persists.')
-            }
-            // Generic error
             else {
                 showAlert('Payment Failed', 'Payment failed. Please try again. Your seats are still reserved.')
             }
@@ -246,7 +319,9 @@ export default function Checkout() {
                                 <MaterialCommunityIcons name="lock" size={16} color="#1DB954" />
                                 <Text className="text-text-secondary-color text-[12px] ml-2">SSL Secure Checkout</Text>
                             </View>
-                            <Text className="text-secondary-color font-medium text-[12px]">My cards</Text>
+                            <TouchableOpacity onPress={() => setShowCardsModal(true)}>
+                                <Text className="text-secondary-color font-medium text-[12px]">My cards</Text>
+                            </TouchableOpacity>
                         </View>
 
                         <View className="bg-tertiary-color rounded-md mt-4 px-4 py-3">
@@ -254,9 +329,11 @@ export default function Checkout() {
                                 placeholder="Card Number"
                                 placeholderTextColor="#6E6E73"
                                 value={cardNumber}
-                                onChangeText={setCardNumber}
+                                onChangeText={formatCardNumber}
                                 keyboardType="numeric"
-                                className="text-text-primary-color text-[14px]"
+                                maxLength={19}
+                                editable={!selectedSavedCard}
+                                className={`text-text-primary-color text-[14px] ${selectedSavedCard ? 'opacity-50' : ''}`}
                             />
                         </View>
 
@@ -266,8 +343,11 @@ export default function Checkout() {
                                     placeholder="MM / YY"
                                     placeholderTextColor="#6E6E73"
                                     value={expiryDate}
-                                    onChangeText={setExpiryDate}
-                                    className="text-text-primary-color text-[14px]"
+                                    onChangeText={formatExpiryDate}
+                                    keyboardType="numeric"
+                                    maxLength={5}
+                                    editable={!selectedSavedCard}
+                                    className={`text-text-primary-color text-[14px] ${selectedSavedCard ? 'opacity-50' : ''}`}
                                 />
                             </View>
                             <View className="bg-tertiary-color rounded-md flex-1 px-4 py-3 flex-row items-center">
@@ -275,9 +355,10 @@ export default function Checkout() {
                                     placeholder="CVV"
                                     placeholderTextColor="#6E6E73"
                                     value={cvv}
-                                    onChangeText={setCvv}
+                                    onChangeText={(text) => setCvv(text.replace(/\D/g, '').slice(0, 3))}
                                     keyboardType="numeric"
                                     secureTextEntry
+                                    maxLength={3}
                                     className="flex-1 text-text-primary-color text-[14px]"
                                 />
                                 <MaterialCommunityIcons name="help-circle-outline" size={18} color="#1DB954" />
@@ -290,19 +371,35 @@ export default function Checkout() {
                                 placeholderTextColor="#6E6E73"
                                 value={cardName}
                                 onChangeText={setCardName}
-                                className="text-text-primary-color text-[14px]"
+                                editable={!selectedSavedCard}
+                                className={`text-text-primary-color text-[14px] ${selectedSavedCard ? 'opacity-50' : ''}`}
                             />
                         </View>
 
-                        <TouchableOpacity
-                            onPress={() => setSaveCard(!saveCard)}
-                            className="flex-row items-center mt-4"
-                        >
-                            <View className={`w-5 h-5 rounded border ${saveCard ? 'bg-secondary-color border-secondary-color' : 'border-secondary-color'} items-center justify-center`}>
-                                {saveCard && <MaterialCommunityIcons name="check" size={14} color="#fff" />}
-                            </View>
-                            <Text className="text-text-secondary-color text-[12px] ml-2">Save card for future purchases</Text>
-                        </TouchableOpacity>
+                        {!selectedSavedCard && (
+                            <TouchableOpacity
+                                onPress={() => setSaveCard(!saveCard)}
+                                className="flex-row items-center mt-4"
+                            >
+                                <View className={`w-5 h-5 rounded border ${saveCard ? 'bg-secondary-color border-secondary-color' : 'border-secondary-color'} items-center justify-center`}>
+                                    {saveCard && <MaterialCommunityIcons name="check" size={14} color="#fff" />}
+                                </View>
+                                <Text className="text-text-secondary-color text-[12px] ml-2">Save card for future purchases</Text>
+                            </TouchableOpacity>
+                        )}
+                        {selectedSavedCard && (
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setSelectedSavedCard(null)
+                                    setCardNumber('')
+                                    setExpiryDate('')
+                                    setCardName('')
+                                }}
+                                className="flex-row items-center mt-3 justify-end"
+                            >
+                                <Text className="text-secondary-color text-[12px] font-medium">Use a different card</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
 
@@ -352,7 +449,10 @@ export default function Checkout() {
                 <View className="h-40" />
             </ScrollView>
 
-            <View className="bg-primary-color px-4 pb-8 pt-4 absolute bottom-0 left-0 right-0">
+            <View
+                className="bg-primary-color px-4 pt-4 absolute left-0 right-0"
+                style={{ paddingBottom: 20 + insets.bottom, bottom: 0 }}
+            >
                 <TouchableOpacity
                     onPress={handlePayment}
                     className="bg-secondary-color h-[48] rounded-lg justify-center items-center"
@@ -365,6 +465,62 @@ export default function Checkout() {
                     <Text className="text-secondary-color">Privacy Policy</Text>.
                 </Text>
             </View>
+
+            {/* Paymemt Methods Modal */}
+            <Modal
+                visible={showCardsModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowCardsModal(false)}
+            >
+                <View className="flex-1 justify-end bg-black/50">
+                    <View className="bg-tertiary-color rounded-t-3xl h-[60%] px-5 pt-6 pb-10">
+                        <View className="flex-row justify-between items-center mb-6">
+                            <Text className="text-white font-bold text-[18px]">Select Saved Card</Text>
+                            <TouchableOpacity onPress={() => setShowCardsModal(false)}>
+                                <MaterialCommunityIcons name="close" size={24} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {savedCards.length > 0 ? (
+                            <FlatList
+                                data={savedCards}
+                                keyExtractor={(item) => item.id}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        onPress={() => handleSelectSavedCard(item)}
+                                        className="flex-row items-center justify-between bg-primary-color p-4 rounded-xl mb-3"
+                                    >
+                                        <View className="flex-row items-center gap-4">
+                                            <MaterialCommunityIcons name={item.icon || 'credit-card'} size={24} color="#1DB954" />
+                                            <View>
+                                                <Text className="text-white font-medium text-[16px]">{item.type} •••• {item.last4}</Text>
+                                                <Text className="text-gray-400 text-[12px]">Expires {item.expiry}</Text>
+                                            </View>
+                                        </View>
+                                        <MaterialCommunityIcons name="chevron-right" size={24} color="#6E6E73" />
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        ) : (
+                            <View className="flex-1 justify-center items-center">
+                                <MaterialCommunityIcons name="credit-card-off-outline" size={48} color="#6E6E73" />
+                                <Text className="text-gray-400 mt-4 text-center">No saved cards found.</Text>
+                            </View>
+                        )}
+
+                        <TouchableOpacity
+                            className="mt-4 bg-secondary-color p-4 rounded-xl items-center"
+                            onPress={() => {
+                                setShowCardsModal(false)
+                                navigation.navigate('AddNewCard')
+                            }}
+                        >
+                            <Text className="text-white font-bold">Add New Card</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     )
 }
