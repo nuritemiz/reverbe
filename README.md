@@ -45,4 +45,3 @@ Reverbe is a modern, seamless mobile application for discovering events and book
     ```
 
 
-Developed by **Nuri Temiz**
