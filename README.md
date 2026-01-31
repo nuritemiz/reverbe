@@ -1,8 +1,8 @@
-# Reverbe 🎟️
+# Reverbe 
 
 Reverbe is a modern, seamless mobile application for discovering events and booking tickets. Built with React Native and Supabase, it offers a premium user experience for selecting seats, managing bookings, and secure payments.
 
-## ✨ Features
+##  Features
 
 *   **Event Discovery:** Browse a wide range of concerts, theater shows, and events.
 *   **Interactive Seat Selection:** Visual seat map to choose your perfect spot.
@@ -11,14 +11,14 @@ Reverbe is a modern, seamless mobile application for discovering events and book
 *   **User Profiles:** Manage tickets, order history, and personal details.
 *   **Real-time Updates:** Push notifications for event reminders and updates.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 *   **Frontend:** React Native, Expo
 *   **Backend:** Supabase (PostgreSQL, Auth, Edge Functions)
 *   **Language:** JavaScript / Node.js
 *   **Styling:** NativeWind (Tailwind CSS)
 
-## 🚀 Getting Started
+##  Getting Started
 
 1.  **Clone the repository:**
     ```bash
@@ -44,10 +44,5 @@ Reverbe is a modern, seamless mobile application for discovering events and book
     npx expo start
     ```
 
-## 📱 Screenshots
-
-*(Add your app screenshots here)*
-
----
 
 Developed by **Nuri Temiz**
